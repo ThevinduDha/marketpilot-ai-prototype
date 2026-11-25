@@ -100,12 +100,14 @@
 .sentiment-chart, .cost-chart { position: relative; width: 115px; height: 115px; flex-shrink: 0; }
 .cost-chart { width: 128px; height: 128px; }
 .sentiment-chart > div:last-child, .cost-chart > div:last-child { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
-.sentiment-chart strong, .cost-chart strong { font-size: 16px; font-weight: 740; line-height: 1.1; }
+.sentiment-chart strong { font-size: 16px; font-weight: 740; line-height: 1.1; }
 .sentiment-chart span, .cost-chart span { font-size: 10px; color: #53637a; }
 .sentiment-legend { display: grid; gap: 5px; flex: 1; padding-right: 5px; }
 .sentiment-legend li { display: flex; gap: 6px; align-items: center; font-size: 11px; color: #425570; }
 .sentiment-legend i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .sentiment-legend strong { margin-left: auto; color: #0f172a; font-weight: 690; }
+.cost-breakdown-total { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; }
+.cost-breakdown-total strong { flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .market-insights-list { display: grid; gap: 7px; margin-top: 6px; }
 .market-insights-list > div { padding: 7px 8px; border-radius: 6px; background: #f8fafc; color: #425570; }
 .market-insights-list dt { color: #253752; font-size: 12px; font-weight: 690; }

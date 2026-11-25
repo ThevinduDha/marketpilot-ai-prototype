@@ -137,12 +137,12 @@ function Workspace({ products, onSaveProduct }: {
 
   function sectionLinks(group: typeof links) {
     return group.map(({ path, icon: Icon, label }) => path === addPath ? (
-      <Link className={`sidebar-link${showAdd ? ' sidebar-active' : ''}`} to={path} key={path} title={label} onClick={() => setMobileOpen(false)}>
+      <Link className={`sidebar-link${showAdd ? ' sidebar-active' : ''}`} to={path} key={path} title={label} aria-current={showAdd ? 'page' : undefined} onClick={() => setMobileOpen(false)}>
         <Icon size={17} /><span>{label}</span>
       </Link>
     ) : (
       <NavLink className={({ isActive }) => `sidebar-link${isActive && !(path === '/dashboard/products' && showAdd) ? ' sidebar-active' : ''}`}
-        to={workspacePath(path)} end={path !== '/dashboard/research'} key={path} title={label} onClick={() => setMobileOpen(false)}>
+        to={workspacePath(path)} end={path !== '/dashboard/research'} key={path} title={label} aria-current={path === '/dashboard/products' && showAdd ? false : 'page'} onClick={() => setMobileOpen(false)}>
         <Icon size={17} /><span>{label}</span>
       </NavLink>
     ))

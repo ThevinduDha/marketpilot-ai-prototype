@@ -36,12 +36,12 @@ export function RevenueChart({ period = '30', preview = false }: { period?: Peri
   const gradient = 'revenue-fill-' + useId().replace(/:/g, '')
   return (
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-      <AreaChart data={periods[period]} margin={{ top: 9, right: 12, bottom: 0, left: 0 }} accessibilityLayer={!preview}>
+      <AreaChart data={periods[period]} margin={{ top: 9, right: preview ? 12 : 20, bottom: 0, left: 0 }} accessibilityLayer={!preview}>
         <defs><linearGradient id={gradient} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="#2563EB" stopOpacity={0.19} /><stop offset="100%" stopColor="#2563EB" stopOpacity={0.015} />
         </linearGradient></defs>
         <CartesianGrid vertical={false} stroke="#E2E8F0" strokeDasharray="4 4" />
-        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} minTickGap={preview ? 8 : 14} tick={{ fill: '#64748B', fontSize: preview ? 9 : 11 }} />
+        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} minTickGap={preview ? 8 : 14} padding={preview ? undefined : { left: 8, right: 12 }} tick={{ fill: '#64748B', fontSize: preview ? 9 : 11 }} />
         <YAxis tickLine={false} axisLine={false} tickMargin={7} width={preview ? 36 : 45}
           tick={{ fill: '#64748B', fontSize: preview ? 9 : 11 }} tickFormatter={(value: number) => value >= 1000 ? '$' + value / 1000 + 'k' : '$' + value} />
         {!preview && <Tooltip formatter={(value) => [typeof value === 'number' ? money(value) : '—', 'Demo revenue']} contentStyle={{ borderRadius: 8, borderColor: '#e2e8f0', fontSize: 12 }} />}

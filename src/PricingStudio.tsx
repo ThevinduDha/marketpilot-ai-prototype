@@ -18,6 +18,7 @@ export function PricingStudio({ product, products, plan, onChange }: { product: 
   const format = (value: number | null) => value === null ? '—' : productMoney(value, product)
   const estimate = (marketplace: Marketplace) => priceEstimate(product, marketplace, validPrice(plan.prices[marketplace]) ? Number(plan.prices[marketplace]) : null)
   const breakdown = estimate(costMarket)
+  const costSlices = breakdown.costs.filter((item) => item.value > 0)
   const canContinue = plan.marketplaces.length > 0 && plan.marketplaces.every((marketplace) => validPrice(plan.prices[marketplace]))
   const inputs = [
     { label: 'Expected selling price', value: product.price, icon: Tags, color: 'violet', provided: true },
@@ -92,18 +93,19 @@ export function PricingStudio({ product, products, plan, onChange }: { product: 
           </div>
         </div>
         <div className="cost-breakdown">
-          <div className="cost-chart">
+          <div className="cost-chart" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart accessibilityLayer={false}>
-                <Pie data={breakdown.costs.filter((item) => item.value > 0)} dataKey="value" nameKey="label" innerRadius={41} outerRadius={59} stroke="none" paddingAngle={2} isAnimationActive={false}>
-                  {breakdown.costs.filter((item) => item.value > 0).map((item) => <Cell key={item.label} fill={item.color} />)}
+                <Pie data={costSlices.length ? costSlices : [{ label: 'No costs', value: 1, color: '#e2e8f0' }]} dataKey="value" nameKey="label" innerRadius={41} outerRadius={59} stroke="none" paddingAngle={2} isAnimationActive={false}>
+                  {costSlices.length ? costSlices.map((item) => <Cell key={item.label} fill={item.color} />) : <Cell fill="#e2e8f0" />}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            <div><strong>{format(breakdown.total)}</strong><span>Total cost</span></div>
+            <div><span>Per unit</span></div>
           </div>
           <ul className="sentiment-legend">
             {breakdown.costs.map((item) => <li key={item.label}><i style={{ background: item.color }} />{item.label}<strong>{format(item.value)}</strong></li>)}
+            <li className="cost-breakdown-total">Total estimated cost<strong>{format(breakdown.total)}</strong></li>
           </ul>
         </div>
         {breakdown.total === null && <p className="market-panel-note">Enter a valid selling price to include the marketplace fee.</p>}

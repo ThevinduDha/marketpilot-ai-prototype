@@ -67,15 +67,15 @@ export const workspaceLinks = [
 
 export const preferenceLinks = [
   { label: 'Integrations', path: '/dashboard/integrations', icon: Plug, description: 'Explore how Etsy and eBay connections could appear in the workspace using simulated account data.' },
-  { label: 'Settings', path: '/dashboard/settings', icon: Settings, description: 'Preview workspace and seller preferences in a later prototype phase.' },
-  { label: 'Help and Support', path: '/dashboard/help', icon: CircleHelp, description: 'Explore guidance for the product, pricing, and listing workflows in a later prototype phase.' },
+  { label: 'Settings', path: '/dashboard/settings', icon: Settings, description: 'Manage demo business details, currency, and marketplace preferences.' },
+  { label: 'Help and Support', path: '/dashboard/help', icon: CircleHelp, description: 'Review the demo workflow and its limitations.' },
 ]
 
 export const recommendations = [
   {
-    title: 'Test a higher price for the wooden elephant',
-    text: 'Comparable Etsy demo listings suggest a price range of $48–$56.',
-    detail: 'In the fictional Etsy comparison, the $48–$56 range reflects hand-carved walnut pieces of a similar size. A $52 price would leave $33 after the example $19 manufacturing cost, before fees and shipping.',
+    title: 'Review the walnut elephant’s asking price',
+    text: 'Check how the sample Etsy listings differ in material and size.',
+    detail: 'The fictional Etsy comparables cover several woods and sizes. Compare the walnut sculpture’s asking price, dimensions, finish, and shipping with these listings before changing its price.',
     product: 'wooden-elephant',
   },
   {

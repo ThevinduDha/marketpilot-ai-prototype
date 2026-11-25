@@ -104,15 +104,23 @@ export function ProductWizard({ existing, onFinish }: { existing?: Product; onFi
     goTo(step + 1)
   }
 
+  const savedProfile = existing?.profile
+  const hasSavedMeasurements = savedProfile?.length || savedProfile?.width || savedProfile?.height
+  const material = draft.materials.trim()
+  const savedSuggestions = existing?.suggestions
   const product: Product = {
     id: existing?.id ?? '', name: draft.name.trim(), description: draft.description.trim(),
-    category: draft.category, status: existing?.status ?? 'Draft', materials: draft.materials.trim(),
+    category: draft.category, status: existing?.status ?? 'Draft', materials: material,
     cost: Number(draft.cost), price: Number(draft.price), quantity: Number(draft.quantity),
     marketplaces: existing?.status === 'Active' ? existing.marketplaces : draft.markets, preferredMarketplaces: draft.markets, profile: draft.profile, images: draft.photos,
     photo: draft.photos[0]?.photo, upload: draft.photos[0]?.upload,
+    suggestions: savedSuggestions && {
+      ...savedSuggestions,
+      materialConfirmed: existing.materials === material && savedSuggestions.materialConfirmed,
+    },
     dimensions: [
       ['L', draft.profile.length], ['W', draft.profile.width], ['H', draft.profile.height],
-    ].filter(([, value]) => value).map(([label, value]) => label + ' ' + value + ' ' + draft.profile.dimensionUnit).join(' · ') || (existing?.profile ? '' : existing?.dimensions ?? ''),
+    ].filter(([, value]) => value).map(([label, value]) => label + ' ' + value + ' ' + draft.profile.dimensionUnit).join(' · ') || (hasSavedMeasurements ? '' : existing?.dimensions ?? ''),
   }
 
   function clearWizard() {

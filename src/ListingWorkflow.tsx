@@ -42,6 +42,7 @@ function ListingEditor({ product, session, onChange }: { product: Product; sessi
   const [copyText, setCopyText] = useState('')
   const draft = session.drafts[marketplace]
   const photos = imagesFor(product)
+  const photoId = listingPhoto(product, draft)?.id ?? ''
   const change = (update: Partial<ListingDraft>) => {
     setMessage('')
     onChange({ ...session, drafts: { ...session.drafts, [marketplace]: { ...draft, ...update } }, saved: false })
@@ -105,14 +106,14 @@ function ListingEditor({ product, session, onChange }: { product: Product; sessi
           <label>Shipping cost (per unit)<input type="number" min="0" step=".01" value={draft.shippingCost} onChange={(event) => {
             if (event.target.value === '' || event.target.validity.valid) change({ shippingCost: event.target.value })
           }} /></label>
-          <label>Primary photo<select value={draft.photoId} onChange={(event) => change({ photoId: event.target.value })} disabled={!photos.length}>
+          <label>Primary photo<select value={photoId} onChange={(event) => change({ photoId: event.target.value })} disabled={!photos.length}>
             {!photos.length && <option value="">No photos available</option>}
             {photos.map((photo, index) => <option value={photo.id} key={photo.id}>Photo {index + 1} · {photo.name}</option>)}
           </select></label>
         </div>
         {!photos.length && <Link className="text-link" to={editProductPath(product)}>Add product photographs <ArrowRight size={15} /></Link>}
         {photos.length > 0 && <div className="listing-photo-strip" aria-label="Product photos">{photos.map((photo, index) =>
-          <button key={photo.id} type="button" aria-label={'Use photo ' + (index + 1)} aria-pressed={photo.id === draft.photoId}
+          <button key={photo.id} type="button" aria-label={'Use photo ' + (index + 1)} aria-pressed={photo.id === photoId}
             onClick={() => change({ photoId: photo.id })}><WorkflowPhoto photo={photo} /></button>)}</div>}
       </section>
       <ListingPreview product={product} draft={draft} marketplace={marketplace} />
