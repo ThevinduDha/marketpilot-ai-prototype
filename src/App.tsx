@@ -1,0 +1,188 @@
+import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronDown, ChevronRight, Command, FlaskConical, House, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Dashboard } from './Dashboard'
+import { AddProduct, ProductDetails, ProductsPage, productPath } from './Products'
+import { Landing, SignIn } from './PublicPages'
+import { activities, preferenceLinks, sampleProducts, workspaceLinks } from './demo'
+import type { Product } from './demo'
+import { Brand, DemoBadge, Dialog, ProductPhoto } from './ui'
+
+const links = [...workspaceLinks, ...preferenceLinks]
+const addPath = '/dashboard/products?add=1'
+
+function ScrollToPage() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
+export default function App() {
+  const [products, setProducts] = useState(sampleProducts)
+  return (
+    <>
+      <ScrollToPage />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/dashboard/*" element={<Workspace products={products} onAddProduct={(product) => setProducts((current) => [product, ...current])} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  )
+}
+
+function Workspace({ products, onAddProduct }: { products: Product[]; onAddProduct: (product: Product) => void }) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [panel, setPanel] = useState<'search' | 'alerts' | 'account'>()
+  const [query, setQuery] = useState('')
+  const [readAlerts, setReadAlerts] = useState(false)
+  const [toast, setToast] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const closeModal = () => setParams({}, { replace: true })
+  const showAdd = location.pathname === '/dashboard/products' && params.has('add')
+  const detailId = params.get('product')
+  const selectedProduct = !showAdd && detailId ? products.find((product) => product.id === detailId) : undefined
+  const currentLink = links.find((link) => link.path === location.pathname)
+  const searchItems = products.filter((product) => product.name.toLowerCase().includes(query.trim().toLowerCase()))
+
+  useEffect(() => {
+    function shortcut(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileOpen(false)
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !document.querySelector('dialog[open]')) {
+        event.preventDefault()
+        setQuery('')
+        setPanel('search')
+      }
+    }
+    window.addEventListener('keydown', shortcut)
+    return () => window.removeEventListener('keydown', shortcut)
+  }, [])
+
+  useEffect(() => {
+    if (!toast) return
+    const timeout = window.setTimeout(() => setToast(''), 5000)
+    return () => window.clearTimeout(timeout)
+  }, [toast])
+
+  function addProduct(product: Product) {
+    onAddProduct(product)
+    closeModal()
+    setToast('Demo draft saved to My Products.')
+  }
+
+  function sectionLinks(group: typeof links) {
+    return group.map(({ path, icon: Icon, label }) => path === addPath ? (
+      <Link className={`sidebar-link${showAdd ? ' sidebar-active' : ''}`} to={path} key={path} title={label} onClick={() => setMobileOpen(false)}>
+        <Icon size={17} /><span>{label}</span>
+      </Link>
+    ) : (
+      <NavLink className={({ isActive }) => `sidebar-link${isActive && !(path === '/dashboard/products' && showAdd) ? ' sidebar-active' : ''}`}
+        to={path} end key={path} title={label} onClick={() => setMobileOpen(false)}>
+        <Icon size={17} /><span>{label}</span>
+      </NavLink>
+    ))
+  }
+
+  return (
+    <div className={`workspace ${collapsed ? 'workspace-collapsed' : ''} ${mobileOpen ? 'workspace-drawer-open' : ''}`}>
+      <a className="skip-link" href="#workspace-main">Skip to content</a>
+      {mobileOpen && <button className="drawer-backdrop" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
+      <aside className="sidebar" id="workspace-sidebar">
+        <div className="sidebar-top">
+          <Brand to="/dashboard" />
+          <button className="icon-button sidebar-toggle" type="button" aria-controls="workspace-sidebar" aria-expanded={!collapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+          </button>
+          <button className="icon-button drawer-close" type="button" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}><X size={19} /></button>
+        </div>
+        <div className="workspace-identity">
+          <span className="workspace-avatar">S</span><div><strong>Studio North</strong><small>Seller workspace</small></div>
+        </div>
+        <nav className="sidebar-nav" aria-label="Workspace navigation">
+          <div className="sidebar-group"><p>Workspace</p>{sectionLinks(workspaceLinks)}</div>
+          <div className="sidebar-group"><p>Preferences</p>{sectionLinks(preferenceLinks)}</div>
+        </nav>
+        <div className="sidebar-bottom"><Link className="sidebar-link" title="Back to website" to="/"><ArrowLeft size={17} /><span>Back to website</span></Link></div>
+      </aside>
+      <div className="workspace-body">
+        <header className="topbar">
+          <button className="icon-button mobile-menu" type="button" aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="workspace-sidebar" onClick={() => setMobileOpen(!mobileOpen)}><Menu size={21} /></button>
+          {collapsed && <button className="icon-button topbar-expand" aria-label="Expand sidebar" onClick={() => setCollapsed(false)}><PanelLeftOpen size={18} /></button>}
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <Link to="/dashboard" aria-label="Workspace overview"><House size={16} /><span>Workspace</span></Link><ChevronRight size={13} /><span aria-current="page">{currentLink?.label || 'Overview'}</span>
+          </nav>
+          <div className="topbar-actions">
+            <button className="top-search" type="button" aria-label="Search workspace" onClick={() => { setQuery(''); setPanel('search') }}>
+              <Search size={16} /><span>Search anything…</span><kbd><Command size={11} /> K</kbd>
+            </button>
+            <DemoBadge />
+            <button className="icon-button bell-button" type="button" aria-label="Notifications" onClick={() => { setReadAlerts(true); setPanel('alerts') }}><Bell size={19} />{!readAlerts && <span />}</button>
+            <button className="account-button" type="button" aria-label="Demo account" onClick={() => setPanel('account')}><span className="user-avatar">AM</span><ChevronDown size={13} /></button>
+          </div>
+        </header>
+        <main className="workspace-main" id="workspace-main">
+          <Routes>
+            <Route index element={<Dashboard products={products} />} />
+            <Route path="products" element={<ProductsPage items={products} />} />
+            {links.map((link) => 'description' in link && link.description ?
+              <Route key={link.path} path={link.path.split('/').at(-1)} element={<PhasePreview title={link.label} description={link.description} icon={link.icon} />} /> : null)}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+        <footer className="workspace-footer"><span>MarketPilot AI</span><span>Academic AI Economy prototype</span></footer>
+      </div>
+
+      {showAdd && <AddProduct onClose={closeModal} onSave={addProduct} />}
+      {selectedProduct && <ProductDetails product={selectedProduct} onClose={closeModal} />}
+      {detailId && !showAdd && !selectedProduct && <Dialog title="Product unavailable" description="Demo drafts are available until the page is reloaded." onClose={closeModal}>
+        <div className="dialog-actions"><button className="button button-primary" onClick={closeModal}>Back to catalog</button></div>
+      </Dialog>}
+      {panel === 'search' && <Dialog title="Search workspace" description="Find a product or jump to a workspace page." onClose={() => setPanel(undefined)}>
+        <label className="search-field dialog-search"><Search size={17} /><span className="sr-only">Search workspace</span>
+          <input data-dialog-autofocus value={query} placeholder="Search products or pages…" onChange={(event) => setQuery(event.target.value)} />
+        </label>
+        <div className="search-results">
+          {searchItems.length > 0 && <span className="search-caption">Products</span>}
+          {searchItems.map((product) => (
+            <button type="button" className="search-result" key={product.id} onClick={() => { setPanel(undefined); navigate(productPath(product)) }}>
+              <ProductPhoto product={product} /><span>{product.name}</span><ArrowRight size={15} />
+            </button>
+          ))}
+          {links.some((item) => item.label.toLowerCase().includes(query.trim().toLowerCase())) && <span className="search-caption">Workspace pages</span>}
+          {links.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase())).map(({ icon: Icon, path, label }) => (
+            <Link to={path} className="search-result" key={path} onClick={() => setPanel(undefined)}><Icon size={16} /><span>{label}</span><ArrowRight size={15} /></Link>
+          ))}
+          {!searchItems.length && !links.some((item) => item.label.toLowerCase().includes(query.trim().toLowerCase())) && <p className="dialog-copy">No results for “{query}”.</p>}
+        </div>
+      </Dialog>}
+      {panel === 'alerts' && <Dialog title="Notifications" description="Activity from the demo workspace." onClose={() => setPanel(undefined)}>
+        <ul className="activity-list modal-activity">{activities.map(({ title, detail, time, icon: Icon, color }) => <li key={title}>
+          <span className={`metric-icon icon-${color}`}><Icon size={16} /></span><div><strong>{title}</strong><small>{detail}</small></div><time>{time}</time>
+        </li>)}</ul>
+      </Dialog>}
+      {panel === 'account' && <Dialog title="Demo account" onClose={() => setPanel(undefined)}>
+        <div className="account-profile"><span className="user-avatar">AM</span><div><strong>Alex Morgan</strong><p>Studio North · Demo seller</p></div></div>
+        <div className="dialog-actions"><Link className="button button-secondary" to="/sign-in">Go to demo sign-in <ArrowRight size={15} /></Link></div>
+      </Dialog>}
+      {toast && <div className="toast" role="status"><CheckCircle2 size={19} /><span>{toast}</span><button className="icon-button" type="button" aria-label="Dismiss message" onClick={() => setToast('')}><X size={16} /></button></div>}
+    </div>
+  )
+}
+
+function PhasePreview({ title, description, icon: Icon }: { title: string; description: string; icon: typeof Search }) {
+  return (
+    <>
+      <div className="page-heading"><div><h1>{title}</h1><p>Planned for a later prototype phase.</p></div></div>
+      <section className="card phase-preview">
+        <span className="feature-icon icon-violet"><Icon size={25} /></span>
+        <h2>{title} preview</h2><p>{description}</p>
+        <span className="phase-label"><FlaskConical size={14} /> Phase 1 placeholder</span>
+        <Link to="/dashboard" className="button button-primary"><ArrowLeft size={16} /> Back to Overview</Link>
+      </section>
+    </>
+  )
+}
