@@ -1,16 +1,18 @@
-import { ArrowLeft, ArrowRight, CircleDollarSign, ClipboardCheck, Package, Sparkles, Tags, Truck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CircleDollarSign, Package, Sparkles, Tags, Truck } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import type { Marketplace, Product } from './demo'
-import { feeAssumptions, intelligencePath, listingsPath, marketplaces, priceEstimate, pricingPath, strategies, strategyKeys, strategyPrices, validPrice } from './marketDemo'
+import { feeAssumptions, intelligencePath, marketplaces, priceEstimate, pricingPath, strategies, strategyKeys, strategyPrices, validPrice } from './marketDemo'
 import type { PricingPlan } from './marketDemo'
 import { MarketJourney, MarketNotice, MarketProduct } from './MarketUI'
 import { productMoney } from './productWorkflow'
 import { MarketLogo } from './ui'
+import { listingRoute, useListingDemo } from './listingDemo'
 
 export function PricingStudio({ product, products, plan, onChange }: { product: Product; products: Product[]; plan: PricingPlan; onChange: (plan: PricingPlan) => void }) {
   const navigate = useNavigate()
+  const { prepareListing } = useListingDemo()
   const [costMarket, setCostMarket] = useState<Marketplace>(() => plan.marketplaces[0] ?? 'Etsy')
   const currency = product.profile?.currency || 'USD'
   const format = (value: number | null) => value === null ? '—' : productMoney(value, product)
@@ -116,27 +118,13 @@ export function PricingStudio({ product, products, plan, onChange }: { product: 
         </dl>
       </section>
     </div>
-    <div className="card research-action"><div><h2>Carry your prices into Listings</h2>
-      <p>{canContinue ? 'Save the selected marketplace prices for the next phase.' : 'Select at least one marketplace and enter a valid price for each selected marketplace.'}</p></div>
+    <div className="card research-action"><div><h2>Create marketplace listing drafts</h2>
+      <p>{canContinue ? 'Carry these marketplace prices into the listing editor.' : 'Select at least one marketplace and enter a valid price for each selected marketplace.'}</p></div>
       <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => {
         onChange(plan)
-        navigate(listingsPath(product))
+        prepareListing(product, plan)
+        navigate(listingRoute(product))
       }}>Generate Listings <ArrowRight size={16} /></button>
     </div>
-  </div>
-}
-
-export function ListingHandoff({ product, plan }: { product: Product; plan: PricingPlan }) {
-  return <div className="market-page">
-    <div className="page-heading"><div><h1>Listings</h1><p>Phase 3 price handoff</p></div></div>
-    <MarketProduct product={product} />
-    <section className="card market-panel market-section">
-      <div className="market-section-heading"><div className="market-icon-title"><span className="feature-icon icon-green"><ClipboardCheck size={22} /></span>
-        <div><h2>Marketplace selection saved</h2><p>Listing content and publishing are planned for a later prototype phase.</p></div></div></div>
-      <dl className="price-values handoff-values">{plan.marketplaces.map((marketplace) => <div key={marketplace}><dt>{marketplace}</dt><dd>
-        {validPrice(plan.prices[marketplace]) ? productMoney(Number(plan.prices[marketplace]), product) : 'Price needs review'}
-      </dd></div>)}</dl>
-      <Link className="button button-secondary market-back-link" to={pricingPath(product)}><ArrowLeft size={16} /> Back to Pricing Studio</Link>
-    </section>
   </div>
 }

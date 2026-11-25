@@ -7,6 +7,7 @@ import type { Category, Marketplace, Product } from './demo'
 import { ProductSummary, WorkflowPhoto } from './ProductIntelligence'
 import { currencies, emptyProfile, imagesFor, makeSample, productBase, productPath, subcategories } from './productWorkflow'
 import type { ProductImage, ProductProfile } from './productWorkflow'
+import { useListingDemo } from './listingDemo'
 import './workflow.css'
 
 const steps = [
@@ -43,8 +44,12 @@ function readPhoto(file: File): Promise<ProductImage> {
 }
 
 export function ProductWizard({ existing, onFinish }: { existing?: Product; onFinish: (product: Product, analyze: boolean) => void }) {
+  const { settings } = useListingDemo()
   const [step, setStep] = useState(0)
-  const [draft, setDraft] = useState(() => draftFrom(existing))
+  const [draft, setDraft] = useState(() => {
+    const initial = draftFrom(existing)
+    return existing ? initial : { ...initial, markets: settings.marketplaces, profile: { ...initial.profile, currency: settings.currency } }
+  })
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

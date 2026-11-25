@@ -6,6 +6,7 @@ import { activities, money, recommendations } from './demo'
 import type { Marketplace, Product } from './demo'
 import { ProductTable } from './Products'
 import { Dialog, MarketLogo } from './ui'
+import { useListingDemo } from './listingDemo'
 
 const periods = {
   '30': [
@@ -51,10 +52,11 @@ export function RevenueChart({ period = '30', preview = false }: { period?: Peri
 }
 
 export function Dashboard({ products }: { products: Product[] }) {
+  const { records, connections } = useListingDemo()
   const [period, setPeriod] = useState<Period>('30')
   const [insight, setInsight] = useState<(typeof recommendations)[number]>()
   const [marketDetails, setMarketDetails] = useState<Marketplace>()
-  const distribution = markets.map((market) => ({ ...market, value: products.filter((product) => product.status === 'Active' && product.marketplaces.includes(market.name)).length }))
+  const distribution = markets.map((market) => ({ ...market, value: records.filter((record) => record.status === 'Published' && record.marketplace === market.name).length }))
   const listings = distribution.reduce((total, market) => total + market.value, 0)
   const drafts = products.filter((product) => product.status === 'Draft').length
   const total = periods[period].reduce((sum, entry) => sum + entry.amount, 0)
@@ -133,7 +135,7 @@ export function Dashboard({ products }: { products: Product[] }) {
           <div className="card-heading"><div><h2 id="connections-title">Marketplace connections</h2><p>Example account status</p></div></div>
           <div className="connection-list">{markets.map(({ name }) => (
             <button className="connection-button" type="button" onClick={() => setMarketDetails(name)} key={name}>
-              <MarketLogo name={name} /><strong>{name}</strong><span><Check size={13} /> Demo connected</span><ChevronRight size={15} />
+              <MarketLogo name={name} /><strong>{name}</strong><span className={connections[name] ? undefined : 'dashboard-connection-off'}>{connections[name] ? <><Check size={13} /> Demo connected</> : 'Demo disconnected'}</span><ChevronRight size={15} />
             </button>
           ))}</div>
         </section>

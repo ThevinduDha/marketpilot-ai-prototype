@@ -26,7 +26,6 @@ The production bundle is written to dist/. Configure a static host to serve inde
 - Demo sign-in
 - Seller overview with charts, activity, recommendations, and connection status
 - Searchable and filterable product catalog with grid and table views, product details, and local draft creation
-- Clearly labeled preview screens for later phases
 
 ## Phase 2
 
@@ -40,7 +39,13 @@ The production bundle is written to dist/. Configure a static host to serve inde
 - Market intelligence for the wooden-elephant sample, including asking prices, feedback, demand, and quality cues
 - Editable Etsy and eBay pricing scenarios with illustrative fees and an in-memory handoff to Listings
 
-All AI output, marketplace connections, and financial figures are fictional. Drafts, local product photos, and pricing selections live in memory for the current browser session and reset on reload. The original demo catalog photography was generated for this prototype.
+## Phase 4
+
+- Editable Etsy and eBay listing drafts with seller approval and a simulated publishing sequence
+- My Listings with session-only records, search, filtering, editing, and pause/resume
+- Fictional analytics, simulated connections, workspace preferences, and a guided Help page
+
+All AI output, marketplace connections, and financial figures are fictional. Drafts, local product photos, pricing selections, settings, and published demo records live in memory for the current browser session and reset on reload. The original demo catalog photography was generated for this prototype.
 
 
 ## Product photography

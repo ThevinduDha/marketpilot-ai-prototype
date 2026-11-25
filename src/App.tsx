@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronDown, ChevronRight, Command, FlaskConical, House, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronDown, ChevronRight, Command, House, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
@@ -7,7 +7,12 @@ import { AnalysisPage, ProductDetailsPage } from './ProductIntelligence'
 import { ProductWizard } from './ProductWizard'
 import { MarketplaceResearch } from './MarketplaceResearch'
 import { MarketIntelligence } from './MarketIntelligence'
-import { ListingHandoff, PricingStudio } from './PricingStudio'
+import { PricingStudio } from './PricingStudio'
+import { ListingWorkflow } from './ListingWorkflow'
+import { MyListings } from './ListingManagement'
+import { Analytics, HelpPage, Integrations, SettingsPage } from './WorkspaceExtras'
+import { ListingProvider, useListingDemo } from './listingDemo'
+import './listings.css'
 import { initialPricingPlan, researchSample } from './marketDemo'
 import type { PricingPlan } from './marketDemo'
 import './market.css'
@@ -19,7 +24,6 @@ import { Brand, DemoBadge, Dialog, ProductPhoto } from './ui'
 
 const links = [...workspaceLinks, ...preferenceLinks]
 const addPath = addProductPath
-const implementedPaths = new Set(['/dashboard/analysis', '/dashboard/research', '/dashboard/pricing'])
 
 function ScrollToPage() {
   const { pathname } = useLocation()
@@ -39,7 +43,7 @@ export default function App() {
       : [product, ...current])
   }, [])
   return (
-    <>
+    <ListingProvider>
       <ScrollToPage />
       <Routes>
         <Route path="/" element={<Landing />} />
@@ -47,7 +51,7 @@ export default function App() {
         <Route path="/dashboard/*" element={<Workspace products={products} onSaveProduct={saveProduct} pricingPlans={pricingPlans} onSavePricingPlan={savePricingPlan} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </ListingProvider>
   )
 }
 
@@ -57,6 +61,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
   pricingPlans: Partial<Record<string, PricingPlan>>
   onSavePricingPlan: (productId: string, plan: PricingPlan) => void
 }) {
+  const { settings } = useListingDemo()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [panel, setPanel] = useState<'search' | 'alerts' | 'account'>()
@@ -128,7 +133,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
           <button className="icon-button drawer-close" type="button" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}><X size={19} /></button>
         </div>
         <div className="workspace-identity">
-          <span className="workspace-avatar">S</span><div><strong>Studio North</strong><small>Seller workspace</small></div>
+          <span className="workspace-avatar">{settings.businessName[0].toUpperCase()}</span><div><strong>{settings.businessName}</strong><small>Seller workspace</small></div>
         </div>
         <nav className="sidebar-nav" aria-label="Workspace navigation">
           <div className="sidebar-group"><p>Workspace</p>{sectionLinks(workspaceLinks)}</div>
@@ -163,12 +168,14 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
             <Route path="research/intelligence" element={<MarketIntelligence product={marketProduct} />} />
             <Route path="pricing" element={<PricingStudio key={marketProduct.id} product={marketProduct} products={products}
               plan={pricingPlan ?? initialPricingPlan(marketProduct)} onChange={(plan) => onSavePricingPlan(marketProduct.id, plan)} />} />
-            {links.map((link) => 'description' in link && link.description && !implementedPaths.has(link.path) ?
-              <Route key={link.path} path={link.path.split('/').at(-1)} element={
-                link.path === '/dashboard/listings' && selectedProduct && pricingPlan
-                  ? <ListingHandoff product={selectedProduct} plan={pricingPlan} />
-                  : <PhasePreview title={link.label} description={link.description} icon={link.icon} />
-              } /> : null)}
+            <Route path="listings" element={selectedProduct
+              ? <ListingWorkflow key={selectedProduct.id} product={selectedProduct} plan={pricingPlan ?? initialPricingPlan(selectedProduct)}
+                stage={params.get('stage')} onPublished={onSaveProduct} />
+              : <MyListings products={products} />} />
+            <Route path="analytics" element={<Analytics products={products} />} />
+            <Route path="integrations" element={<Integrations />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="help" element={<HelpPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
@@ -199,24 +206,10 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
         </li>)}</ul>
       </Dialog>}
       {panel === 'account' && <Dialog title="Demo account" onClose={() => setPanel(undefined)}>
-        <div className="account-profile"><span className="user-avatar">AM</span><div><strong>Alex Morgan</strong><p>Studio North · Demo seller</p></div></div>
+        <div className="account-profile"><span className="user-avatar">AM</span><div><strong>Alex Morgan</strong><p>{settings.businessName} · Demo seller</p></div></div>
         <div className="dialog-actions"><Link className="button button-secondary" to="/sign-in">Go to demo sign-in <ArrowRight size={15} /></Link></div>
       </Dialog>}
       {toast && <div className="toast" role="status"><CheckCircle2 size={19} /><span>{toast}</span><button className="icon-button" type="button" aria-label="Dismiss message" onClick={() => setToast('')}><X size={16} /></button></div>}
     </div>
-  )
-}
-
-function PhasePreview({ title, description, icon: Icon }: { title: string; description: string; icon: typeof Search }) {
-  return (
-    <>
-      <div className="page-heading"><div><h1>{title}</h1><p>Planned for a later prototype phase.</p></div></div>
-      <section className="card phase-preview">
-        <span className="feature-icon icon-violet"><Icon size={25} /></span>
-        <h2>{title} preview</h2><p>{description}</p>
-        <span className="phase-label"><FlaskConical size={14} /> Later-phase preview</span>
-        <Link to="/dashboard" className="button button-primary"><ArrowLeft size={16} /> Back to Overview</Link>
-      </section>
-    </>
   )
 }
