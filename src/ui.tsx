@@ -19,7 +19,7 @@ export function DemoBadge() {
 
 const photoPositions = { elephant: '0% 0%', necklace: '100% 0%', vase: '0% 100%', camera: '100% 100%' }
 
-export function ProductPhoto({ product, className = '' }: { product: Product; className?: string }) {
+export function ProductPhoto({ product, className = '' }: { product: Pick<Product, 'name' | 'photo' | 'upload'>; className?: string }) {
   return (
     <div className={`product-photo ${className}`} role="img" aria-label={product.name}>
       <Package size={22} aria-hidden="true" />

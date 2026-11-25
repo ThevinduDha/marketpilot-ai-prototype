@@ -2,7 +2,7 @@
 
 ## Project scope
 
-MarketPilot AI is a high-fidelity, clickable frontend prototype for an academic AI Economy presentation. Phase 1 includes the public landing page, demo sign-in, seller overview, and product catalog. Product detail and draft entry are local dialogs. Use clearly labeled placeholders for later screens until those phases are requested.
+MarketPilot AI is a high-fidelity, clickable frontend prototype for an academic AI Economy presentation. Phase 1 includes the public landing page, demo sign-in, seller overview, and product catalog. Phase 2 includes the five-step product wizard, full product details, and simulated AI analysis and results. Keep entered product data and suggestions in React state. Use clearly labeled placeholders for later screens until those phases are requested.
 
 ## Design system
 

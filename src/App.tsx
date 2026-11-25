@@ -1,15 +1,18 @@
 import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronDown, ChevronRight, Command, FlaskConical, House, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
-import { AddProduct, ProductDetails, ProductsPage, productPath } from './Products'
+import { ProductsPage } from './Products'
+import { AnalysisPage, ProductDetailsPage } from './ProductIntelligence'
+import { ProductWizard } from './ProductWizard'
+import { addProductPath, analysisPath, productPath, suggestionsFor } from './productWorkflow'
 import { Landing, SignIn } from './PublicPages'
 import { activities, preferenceLinks, sampleProducts, workspaceLinks } from './demo'
 import type { Product } from './demo'
 import { Brand, DemoBadge, Dialog, ProductPhoto } from './ui'
 
 const links = [...workspaceLinks, ...preferenceLinks]
-const addPath = '/dashboard/products?add=1'
+const addPath = addProductPath
 
 function ScrollToPage() {
   const { pathname } = useLocation()
@@ -18,21 +21,26 @@ function ScrollToPage() {
 }
 
 export default function App() {
-  const [products, setProducts] = useState(sampleProducts)
+  const [products, setProducts] = useState(() => sampleProducts.map((product) => product.id === 'wooden-elephant' ? { ...product, suggestions: suggestionsFor(product) } : product))
+  const saveProduct = useCallback((product: Product) => {
+    setProducts((current) => current.some((item) => item.id === product.id)
+      ? current.map((item) => item.id === product.id ? product : item)
+      : [product, ...current])
+  }, [])
   return (
     <>
       <ScrollToPage />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/dashboard/*" element={<Workspace products={products} onAddProduct={(product) => setProducts((current) => [product, ...current])} />} />
+        <Route path="/dashboard/*" element={<Workspace products={products} onSaveProduct={saveProduct} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   )
 }
 
-function Workspace({ products, onAddProduct }: { products: Product[]; onAddProduct: (product: Product) => void }) {
+function Workspace({ products, onSaveProduct }: { products: Product[]; onSaveProduct: (product: Product) => void }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [panel, setPanel] = useState<'search' | 'alerts' | 'account'>()
@@ -41,12 +49,13 @@ function Workspace({ products, onAddProduct }: { products: Product[]; onAddProdu
   const [toast, setToast] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const [params, setParams] = useSearchParams()
-  const closeModal = () => setParams({}, { replace: true })
+  const [params] = useSearchParams()
   const showAdd = location.pathname === '/dashboard/products' && params.has('add')
   const detailId = params.get('product')
-  const selectedProduct = !showAdd && detailId ? products.find((product) => product.id === detailId) : undefined
+  const selectedProduct = products.find((product) => product.id === detailId)
+  const editing = !!selectedProduct && params.has('edit')
   const currentLink = links.find((link) => link.path === location.pathname)
+  const crumb = showAdd ? 'Add Product' : location.pathname === '/dashboard/products' && detailId ? (editing ? 'Edit Product' : 'Product Details') : currentLink?.label || 'Overview'
   const searchItems = products.filter((product) => product.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   useEffect(() => {
@@ -68,10 +77,10 @@ function Workspace({ products, onAddProduct }: { products: Product[]; onAddProdu
     return () => window.clearTimeout(timeout)
   }, [toast])
 
-  function addProduct(product: Product) {
-    onAddProduct(product)
-    closeModal()
-    setToast('Demo draft saved to My Products.')
+  function finishProduct(product: Product, analyze: boolean) {
+    onSaveProduct(product)
+    if (!analyze) setToast(product.status === 'Active' ? 'Product changes saved.' : 'Demo draft saved to My Products.')
+    navigate(analyze ? analysisPath(product, true) : productPath(product), { replace: true })
   }
 
   function sectionLinks(group: typeof links) {
@@ -113,7 +122,7 @@ function Workspace({ products, onAddProduct }: { products: Product[]; onAddProdu
           <button className="icon-button mobile-menu" type="button" aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="workspace-sidebar" onClick={() => setMobileOpen(!mobileOpen)}><Menu size={21} /></button>
           {collapsed && <button className="icon-button topbar-expand" aria-label="Expand sidebar" onClick={() => setCollapsed(false)}><PanelLeftOpen size={18} /></button>}
           <nav className="breadcrumbs" aria-label="Breadcrumb">
-            <Link to="/dashboard" aria-label="Workspace overview"><House size={16} /><span>Workspace</span></Link><ChevronRight size={13} /><span aria-current="page">{currentLink?.label || 'Overview'}</span>
+            <Link to="/dashboard" aria-label="Workspace overview"><House size={16} /><span>Workspace</span></Link><ChevronRight size={13} /><span aria-current="page">{crumb}</span>
           </nav>
           <div className="topbar-actions">
             <button className="top-search" type="button" aria-label="Search workspace" onClick={() => { setQuery(''); setPanel('search') }}>
@@ -127,20 +136,18 @@ function Workspace({ products, onAddProduct }: { products: Product[]; onAddProdu
         <main className="workspace-main" id="workspace-main">
           <Routes>
             <Route index element={<Dashboard products={products} />} />
-            <Route path="products" element={<ProductsPage items={products} />} />
-            {links.map((link) => 'description' in link && link.description ?
-              <Route key={link.path} path={link.path.split('/').at(-1)} element={<PhasePreview title={link.label} description={link.description} icon={link.icon} />} /> : null)}
+            <Route path="products" element={showAdd || editing
+              ? <ProductWizard key={editing ? detailId : 'new'} existing={editing ? selectedProduct : undefined} onFinish={finishProduct} />
+              : detailId ? <ProductDetailsPage product={selectedProduct} /> : <ProductsPage items={products} />} />
+            <Route path="analysis" element={<AnalysisPage product={selectedProduct} products={products} run={params.has('run')} onSave={onSaveProduct} />} />
+            {links.map((link) => 'description' in link && link.description && link.path !== '/dashboard/analysis' ?
+              <Route key={link.path} path={link.path.split('/').at(-1)} element={<PhasePreview title={link.label} description={link.description} icon={link.icon} product={link.path === '/dashboard/research' ? selectedProduct : undefined} />} /> : null)}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
         <footer className="workspace-footer"><span>MarketPilot AI</span><span>Academic AI Economy prototype</span></footer>
       </div>
 
-      {showAdd && <AddProduct onClose={closeModal} onSave={addProduct} />}
-      {selectedProduct && <ProductDetails product={selectedProduct} onClose={closeModal} />}
-      {detailId && !showAdd && !selectedProduct && <Dialog title="Product unavailable" description="Demo drafts are available until the page is reloaded." onClose={closeModal}>
-        <div className="dialog-actions"><button className="button button-primary" onClick={closeModal}>Back to catalog</button></div>
-      </Dialog>}
       {panel === 'search' && <Dialog title="Search workspace" description="Find a product or jump to a workspace page." onClose={() => setPanel(undefined)}>
         <label className="search-field dialog-search"><Search size={17} /><span className="sr-only">Search workspace</span>
           <input data-dialog-autofocus value={query} placeholder="Search products or pages…" onChange={(event) => setQuery(event.target.value)} />
@@ -173,15 +180,16 @@ function Workspace({ products, onAddProduct }: { products: Product[]; onAddProdu
   )
 }
 
-function PhasePreview({ title, description, icon: Icon }: { title: string; description: string; icon: typeof Search }) {
+function PhasePreview({ title, description, icon: Icon, product }: { title: string; description: string; icon: typeof Search; product?: Product }) {
   return (
     <>
       <div className="page-heading"><div><h1>{title}</h1><p>Planned for a later prototype phase.</p></div></div>
       <section className="card phase-preview">
         <span className="feature-icon icon-violet"><Icon size={25} /></span>
         <h2>{title} preview</h2><p>{description}</p>
-        <span className="phase-label"><FlaskConical size={14} /> Phase 1 placeholder</span>
-        <Link to="/dashboard" className="button button-primary"><ArrowLeft size={16} /> Back to Overview</Link>
+        <span className="phase-label"><FlaskConical size={14} /> Later-phase preview</span>
+        {product && <p>Selected product: <strong>{product.name}</strong></p>}
+        <Link to={product ? analysisPath(product) : "/dashboard"} className="button button-primary"><ArrowLeft size={16} /> {product ? "Back to Analysis" : "Back to Overview"}</Link>
       </section>
     </>
   )

@@ -1,3 +1,4 @@
+import type { ProductImage, ProductProfile, ProductSuggestions } from './productWorkflow'
 import {
   BarChart3, ChartNoAxesCombined, CircleHelp, LayoutDashboard, ListChecks,
   Package, Plug, PlusCircle, Search, Settings, Sparkles, Tags,
@@ -20,6 +21,10 @@ export type Product = {
   marketplaces: Marketplace[]
   photo?: 'elephant' | 'necklace' | 'vase' | 'camera'
   upload?: string
+  preferredMarketplaces?: Marketplace[]
+  profile?: ProductProfile
+  images?: ProductImage[]
+  suggestions?: ProductSuggestions
 }
 
 export const sampleProducts: Product[] = [

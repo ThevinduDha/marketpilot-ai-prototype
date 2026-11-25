@@ -1,12 +1,10 @@
-import { ArrowRight, ArrowUpRight, ImagePlus, LayoutGrid, List, PackageSearch, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, LayoutGrid, List, PackageSearch, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { useState } from 'react'
-import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { categories, money } from './demo'
-import type { Category, Product } from './demo'
-import { Dialog, Markets, ProductPhoto, Status } from './ui'
-
-export const productPath = (product: Product) => '/dashboard/products?product=' + encodeURIComponent(product.id)
+import { categories } from './demo'
+import { productMoney, productPath } from './productWorkflow'
+import type { Product } from './demo'
+import { Markets, ProductPhoto, Status } from './ui'
 
 export function ProductTable({ items, compact = false }: { items: Product[]; compact?: boolean }) {
   return (
@@ -27,7 +25,7 @@ export function ProductTable({ items, compact = false }: { items: Product[]; com
                 <span><strong>{product.name}</strong>{compact && <small>{product.category}</small>}</span>
               </Link></th>
               {!compact && <td>{product.category}</td>}
-              <td className="table-price">{money(product.price)}</td>
+              <td className="table-price">{productMoney(product.price, product)}</td>
               {!compact && <td>{product.quantity}</td>}
               <td><Markets marketplaces={product.marketplaces} /></td>
               <td><Status status={product.status} /></td>
@@ -93,7 +91,7 @@ export function ProductsPage({ items }: { items: Product[] }) {
               <div className="product-card-body">
                 <div className="product-card-meta"><span>{product.category}</span><Status status={product.status} /></div>
                 <h2><Link to={productPath(product)}>{product.name}</Link></h2>
-                <div className="product-card-stock"><strong>{money(product.price)}</strong><span>{product.quantity} available</span></div>
+                <div className="product-card-stock"><strong>{productMoney(product.price, product)}</strong><span>{product.quantity} available</span></div>
                 <div className="product-card-footer"><Markets marketplaces={product.marketplaces} />
                   <Link className="text-link" to={productPath(product)}>View Product <ArrowRight size={14} /></Link></div>
               </div>
@@ -102,80 +100,5 @@ export function ProductsPage({ items }: { items: Product[] }) {
         </div>
       )}
     </>
-  )
-}
-
-export function ProductDetails({ product, onClose }: { product: Product; onClose: () => void }) {
-  return (
-    <Dialog title={product.name} description="Demo catalog product" onClose={onClose} wide>
-      <div className="detail-view">
-        <ProductPhoto product={product} className="detail-photo" />
-        <div>
-          <div className="detail-badges"><Status status={product.status} /><Markets marketplaces={product.marketplaces} /></div>
-          <p>{product.description || 'No description added yet.'}</p>
-          <dl>
-            <div><dt>Category</dt><dd>{product.category}</dd></div><div><dt>Available quantity</dt><dd>{product.quantity}</dd></div>
-            <div><dt>Selling price</dt><dd>{money(product.price)}</dd></div><div><dt>Manufacturing cost</dt><dd>{money(product.cost)}</dd></div>
-            <div><dt>Dimensions</dt><dd>{product.dimensions || 'Unspecified'}</dd></div><div><dt>Materials</dt><dd>{product.materials || 'Unspecified'}</dd></div>
-          </dl>
-        </div>
-      </div>
-      <div className="dialog-actions"><button className="button button-secondary" type="button" onClick={onClose}>Close</button></div>
-    </Dialog>
-  )
-}
-
-export function AddProduct({ onClose, onSave }: { onClose: () => void; onSave: (product: Product) => void }) {
-  const [photo, setPhoto] = useState<File>()
-  const [photoError, setPhotoError] = useState('')
-  function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (photoError) return
-    const fields = new FormData(event.currentTarget)
-    const value = (name: string) => String(fields.get(name) ?? '').trim()
-    if (!value('name')) {
-      const nameField = event.currentTarget.elements.namedItem('name') as HTMLInputElement
-      nameField.setCustomValidity('Enter a product name.')
-      nameField.reportValidity()
-      return
-    }
-    onSave({
-      id: 'draft-' + crypto.randomUUID(), name: value('name'), category: value('category') as Category,
-      quantity: Number(value('quantity')), price: Number(value('price')), cost: Number(value('cost')),
-      dimensions: value('dimensions'), materials: value('materials'), description: value('description'),
-      status: 'Draft', marketplaces: [], upload: photo ? URL.createObjectURL(photo) : undefined,
-    })
-  }
-
-  return (
-    <Dialog title="Add Product" description="Create a demo draft for this browser session." onClose={onClose} wide>
-      <form onSubmit={save} className="draft-form">
-        <label className="upload-field">
-          <ImagePlus size={22} aria-hidden="true" />
-          <span><strong>{photo?.name || 'Choose a product photo'}</strong><small>Optional · JPEG, PNG, or WebP · up to 6 MB</small></span>
-          <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a product photo" onChange={(event) => {
-            const selected = event.target.files?.[0]
-            const invalid = selected && (!['image/jpeg', 'image/png', 'image/webp'].includes(selected.type) || selected.size > 6 * 1024 * 1024)
-            setPhoto(invalid ? undefined : selected)
-            setPhotoError(invalid ? 'Choose a JPEG, PNG, or WebP image under 6 MB.' : '')
-          }} />
-        </label>
-        {photoError && <p className="field-error" role="alert">{photoError}</p>}
-        <div className="form-grid">
-          <label>Product name<input name="name" placeholder="e.g. Hand-thrown planter" required maxLength={100} onInput={(event) => event.currentTarget.setCustomValidity('')} /></label>
-          <label>Category<select name="category">{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
-          <label>Manufacturing cost (USD)<input name="cost" type="number" min="0" max="999999" step="0.01" placeholder="0.00" required /></label>
-          <label>Expected selling price (USD)<input name="price" type="number" min="0" max="999999" step="0.01" placeholder="0.00" required /></label>
-          <label>Available quantity<input name="quantity" type="number" min="0" max="999999" step="1" placeholder="0" required /></label>
-          <label>Dimensions<input name="dimensions" placeholder="e.g. 12 × 12 × 8 cm" maxLength={60} /></label>
-          <label className="full-field">Materials<input name="materials" placeholder="e.g. Glazed stoneware" maxLength={100} /></label>
-          <label className="full-field">Description<textarea name="description" rows={3} maxLength={500} placeholder="Describe the product and its finish." /></label>
-        </div>
-        <div className="dialog-actions">
-          <button className="button button-secondary" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit">Save demo draft</button>
-        </div>
-      </form>
-    </Dialog>
   )
 }

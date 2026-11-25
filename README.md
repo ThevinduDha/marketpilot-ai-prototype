@@ -28,6 +28,12 @@ The production bundle is written to dist/. Configure a static host to serve inde
 - Searchable and filterable product catalog with grid and table views, product details, and local draft creation
 - Clearly labeled preview screens for later phases
 
+## Phase 2
+
+- Five-step product wizard with local image previews, primary image selection, and a prefilled mahogany elephant sample
+- Product detail pages and a timed simulated analysis with editable suggestions
+- Product-specific handoff to the later-phase marketplace research preview
+
 All AI output, marketplace connections, and financial figures are fictional. Drafts and any selected product photos live in memory for the current browser session and reset on reload. The original demo catalog photography was generated for this prototype.
 
 
