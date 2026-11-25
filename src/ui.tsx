@@ -30,7 +30,7 @@ export function ProductPhoto({ product, className = '' }: { product: Pick<Produc
 }
 
 export function MarketLogo({ name }: { name: Marketplace }) {
-  return <span aria-hidden="true" className={`market-logo ${name === 'Etsy' ? 'market-etsy' : 'market-ebay'}`}>{name === 'Etsy' ? 'E' : 'e'}</span>
+  return <span aria-hidden="true" className={`market-logo ${name === 'Etsy' ? 'market-etsy' : 'market-ebay'}`}>{name}</span>
 }
 
 export function Markets({ marketplaces }: { marketplaces: Product['marketplaces'] }) {

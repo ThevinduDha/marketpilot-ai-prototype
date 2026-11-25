@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronDown, ChevronRight, Command, House, Menu, PanelLeftClose, PanelLeftOpen, Search, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronDown, ChevronRight, House, Menu, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Dashboard } from './Dashboard'
@@ -14,7 +14,6 @@ import { Analytics, HelpPage, Integrations, SettingsPage } from './WorkspaceExtr
 import { ListingProvider, useListingDemo } from './listingDemo'
 import './listings.css'
 import { initialPricingPlan, researchSample } from './marketDemo'
-import type { PricingPlan } from './marketDemo'
 import './market.css'
 import { addProductPath, analysisPath, productPath, suggestionsFor } from './productWorkflow'
 import { Landing, SignIn } from './PublicPages'
@@ -26,17 +25,13 @@ const links = [...workspaceLinks, ...preferenceLinks]
 const addPath = addProductPath
 
 function ScrollToPage() {
-  const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  const { pathname, search } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname, search])
   return null
 }
 
 export default function App() {
   const [products, setProducts] = useState(() => sampleProducts.map((product) => product.id === 'wooden-elephant' ? { ...product, suggestions: suggestionsFor(product) } : product))
-  const [pricingPlans, setPricingPlans] = useState<Partial<Record<string, PricingPlan>>>({})
-  const savePricingPlan = useCallback((productId: string, plan: PricingPlan) => {
-    setPricingPlans((current) => ({ ...current, [productId]: plan }))
-  }, [])
   const saveProduct = useCallback((product: Product) => {
     setProducts((current) => current.some((item) => item.id === product.id)
       ? current.map((item) => item.id === product.id ? product : item)
@@ -48,23 +43,21 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/dashboard/*" element={<Workspace products={products} onSaveProduct={saveProduct} pricingPlans={pricingPlans} onSavePricingPlan={savePricingPlan} />} />
+        <Route path="/dashboard/*" element={<Workspace products={products} onSaveProduct={saveProduct} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ListingProvider>
   )
 }
 
-function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }: {
+function Workspace({ products, onSaveProduct }: {
   products: Product[]
   onSaveProduct: (product: Product) => void
-  pricingPlans: Partial<Record<string, PricingPlan>>
-  onSavePricingPlan: (productId: string, plan: PricingPlan) => void
 }) {
-  const { settings } = useListingDemo()
+  const { settings, viewMemory, pricingPlans, savePricingPlan } = useListingDemo()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [panel, setPanel] = useState<'search' | 'alerts' | 'account'>()
+  const [panel, setPanel] = useState<'search' | 'alerts' | 'account' | 'restart'>()
   const [query, setQuery] = useState('')
   const [readAlerts, setReadAlerts] = useState(false)
   const [toast, setToast] = useState('')
@@ -74,13 +67,36 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
   const showAdd = location.pathname === '/dashboard/products' && params.has('add')
   const detailId = params.get('product')
   const selectedProduct = products.find((product) => product.id === detailId) ?? (detailId === researchSample.id ? researchSample : undefined)
-  const marketProduct = selectedProduct ?? researchSample
+  useEffect(() => {
+    if (selectedProduct) viewMemory.set('currentProduct', selectedProduct.id)
+  }, [selectedProduct, viewMemory])
+  const marketProduct = selectedProduct ?? products.find((item) => item.id === viewMemory.get('currentProduct')) ?? researchSample
   const pricingPlan = pricingPlans[marketProduct.id]
   const editing = !!selectedProduct && params.has('edit')
   const currentLink = links.find((link) => link.path === location.pathname)
   const crumb = showAdd ? 'Add Product' : location.pathname === '/dashboard/products' && detailId ? (editing ? 'Edit Product' : 'Product Details')
+    : location.pathname === '/dashboard/listings' && selectedProduct ? ({ review: 'Final Review', publish: 'Publishing', success: 'Publication Summary' }[params.get('stage') ?? ''] ?? 'Listing Editor')
     : location.pathname === '/dashboard/research/intelligence' ? 'Market Intelligence' : currentLink?.label || 'Overview'
   const searchItems = products.filter((product) => product.name.toLowerCase().includes(query.trim().toLowerCase()))
+
+  useEffect(() => { setMobileOpen(false) }, [location.key])
+  useEffect(() => {
+    if (!mobileOpen) return
+    const content = document.querySelector<HTMLElement>('.workspace-body')
+    const previousOverflow = document.body.style.overflow
+    if (content) content.inert = true
+    document.body.style.overflow = 'hidden'
+    document.querySelector<HTMLButtonElement>('.drawer-close')?.focus()
+    const desktop = window.matchMedia('(min-width: 901px)')
+    const closeOnDesktop = () => { if (desktop.matches) setMobileOpen(false) }
+    desktop.addEventListener('change', closeOnDesktop)
+    return () => {
+      if (content) content.inert = false
+      document.body.style.overflow = previousOverflow
+      desktop.removeEventListener('change', closeOnDesktop)
+      document.querySelector<HTMLButtonElement>('.mobile-menu')?.focus({ preventScroll: true })
+    }
+  }, [mobileOpen])
 
   useEffect(() => {
     function shortcut(event: KeyboardEvent) {
@@ -102,9 +118,21 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
   }, [toast])
 
   function finishProduct(product: Product, analyze: boolean) {
+    const previous = products.find((item) => item.id === product.id)
+    const previousMarkets = previous?.preferredMarketplaces ?? previous?.marketplaces
+    const chosenMarkets = product.preferredMarketplaces ?? product.marketplaces
+    const savedPlan = pricingPlans[product.id]
+    if (savedPlan && previousMarkets?.join() !== chosenMarkets.join()) {
+      savePricingPlan(product.id, { ...savedPlan, marketplaces: chosenMarkets })
+    }
     onSaveProduct(product)
     if (!analyze) setToast(product.status === 'Active' ? 'Product changes saved.' : 'Demo draft saved to My Products.')
     navigate(analyze ? analysisPath(product, true) : productPath(product), { replace: true })
+  }
+
+  function workspacePath(path: string) {
+    return path === '/dashboard/pricing' || path === '/dashboard/research'
+      ? path + '?product=' + encodeURIComponent(marketProduct.id) : path
   }
 
   function sectionLinks(group: typeof links) {
@@ -114,7 +142,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
       </Link>
     ) : (
       <NavLink className={({ isActive }) => `sidebar-link${isActive && !(path === '/dashboard/products' && showAdd) ? ' sidebar-active' : ''}`}
-        to={path} end={path !== '/dashboard/research'} key={path} title={label} onClick={() => setMobileOpen(false)}>
+        to={workspacePath(path)} end={path !== '/dashboard/research'} key={path} title={label} onClick={() => setMobileOpen(false)}>
         <Icon size={17} /><span>{label}</span>
       </NavLink>
     ))
@@ -139,7 +167,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
           <div className="sidebar-group"><p>Workspace</p>{sectionLinks(workspaceLinks)}</div>
           <div className="sidebar-group"><p>Preferences</p>{sectionLinks(preferenceLinks)}</div>
         </nav>
-        <div className="sidebar-bottom"><Link className="sidebar-link" title="Back to website" to="/"><ArrowLeft size={17} /><span>Back to website</span></Link></div>
+        <div className="sidebar-bottom"><button type="button" className="sidebar-link" title="Restart Demo" aria-label="Restart Demo" onClick={() => { setMobileOpen(false); setPanel('restart') }}><RotateCcw size={17} /><span>Restart Demo</span></button><Link className="sidebar-link" title="Back to website" to="/"><ArrowLeft size={17} /><span>Back to website</span></Link></div>
       </aside>
       <div className="workspace-body">
         <header className="topbar">
@@ -150,7 +178,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
           </nav>
           <div className="topbar-actions">
             <button className="top-search" type="button" aria-label="Search workspace" onClick={() => { setQuery(''); setPanel('search') }}>
-              <Search size={16} /><span>Search anything…</span><kbd><Command size={11} /> K</kbd>
+              <Search size={16} /><span>Search anything…</span><kbd>{/mac/i.test(navigator.platform) ? '⌘' : 'Ctrl'} K</kbd>
             </button>
             <DemoBadge />
             <button className="icon-button bell-button" type="button" aria-label="Notifications" onClick={() => { setReadAlerts(true); setPanel('alerts') }}><Bell size={19} />{!readAlerts && <span />}</button>
@@ -167,7 +195,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
             <Route path="research" element={<MarketplaceResearch key={marketProduct.id} product={marketProduct} products={products} />} />
             <Route path="research/intelligence" element={<MarketIntelligence product={marketProduct} />} />
             <Route path="pricing" element={<PricingStudio key={marketProduct.id} product={marketProduct} products={products}
-              plan={pricingPlan ?? initialPricingPlan(marketProduct)} onChange={(plan) => onSavePricingPlan(marketProduct.id, plan)} />} />
+              plan={pricingPlan ?? initialPricingPlan(marketProduct)} onChange={(plan) => savePricingPlan(marketProduct.id, plan)} />} />
             <Route path="listings" element={selectedProduct
               ? <ListingWorkflow key={selectedProduct.id} product={selectedProduct} plan={pricingPlan ?? initialPricingPlan(selectedProduct)}
                 stage={params.get('stage')} onPublished={onSaveProduct} />
@@ -182,6 +210,10 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
         <footer className="workspace-footer"><span>MarketPilot AI</span><span>Academic AI Economy prototype</span></footer>
       </div>
 
+      {panel === 'restart' && <Dialog title="Restart the demo?" description="This clears your edits, uploads, and demo listings and restores the sample workspace." onClose={() => setPanel(undefined)}>
+        <div className="dialog-actions"><button className="button button-secondary" data-dialog-autofocus onClick={() => setPanel(undefined)}>Cancel</button>
+          <button className="button button-primary" onClick={() => window.location.replace('/dashboard')}>Restart Demo</button></div>
+      </Dialog>}
       {panel === 'search' && <Dialog title="Search workspace" description="Find a product or jump to a workspace page." onClose={() => setPanel(undefined)}>
         <label className="search-field dialog-search"><Search size={17} /><span className="sr-only">Search workspace</span>
           <input data-dialog-autofocus value={query} placeholder="Search products or pages…" onChange={(event) => setQuery(event.target.value)} />
@@ -195,7 +227,7 @@ function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }:
           ))}
           {links.some((item) => item.label.toLowerCase().includes(query.trim().toLowerCase())) && <span className="search-caption">Workspace pages</span>}
           {links.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase())).map(({ icon: Icon, path, label }) => (
-            <Link to={path} className="search-result" key={path} onClick={() => setPanel(undefined)}><Icon size={16} /><span>{label}</span><ArrowRight size={15} /></Link>
+            <Link to={workspacePath(path)} className="search-result" key={path} onClick={() => setPanel(undefined)}><Icon size={16} /><span>{label}</span><ArrowRight size={15} /></Link>
           ))}
           {!searchItems.length && !links.some((item) => item.label.toLowerCase().includes(query.trim().toLowerCase())) && <p className="dialog-copy">No results for “{query}”.</p>}
         </div>

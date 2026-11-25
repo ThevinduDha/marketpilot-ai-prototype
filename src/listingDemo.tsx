@@ -1,8 +1,8 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { sampleProducts } from './demo'
 import type { Marketplace, Product } from './demo'
-import { listingsPath, marketplaces, validPrice } from './marketDemo'
+import { initialPricingPlan, listingsPath, marketplaces, validPrice } from './marketDemo'
 import type { PricingPlan } from './marketDemo'
 import { imagesFor } from './productWorkflow'
 
@@ -15,7 +15,7 @@ export type Listing = {
   id: string; product: Product; marketplace: Marketplace; content: ListingDraft; date: string; status: 'Published' | 'Paused'
 }
 export type ListingSession = {
-  drafts: Record<Marketplace, ListingDraft>; selected: Marketplace[]; saved?: boolean; pricingBasis?: PricingPlan
+  drafts: Record<Marketplace, ListingDraft>; selected: Marketplace[]; saved?: boolean
 }
 export type PublishJob = { records: Listing[]; complete: boolean }
 export type Settings = { businessName: string; description: string; currency: string; marketplaces: Marketplace[] }
@@ -76,28 +76,41 @@ const seedListings: Listing[] = sampleProducts.filter((item) => item.status === 
 })))
 
 function useListingStore() {
+  const [viewMemory] = useState(() => new Map<string, unknown>())
   const [records, setRecords] = useState(seedListings)
   const [sessions, setSessions] = useState<Partial<Record<string, ListingSession>>>({})
+  const [pricingPlans, setPricingPlans] = useState<Partial<Record<string, PricingPlan>>>({})
   const [jobs, setJobs] = useState<Partial<Record<string, PublishJob>>>({})
   const [connections, setConnections] = useState<Record<Marketplace, boolean>>({ Etsy: true, eBay: true })
   const [settings, setSettings] = useState<Settings>({ businessName: 'Studio North', description: '', currency: 'USD', marketplaces: [] })
 
   function saveSession(id: string, session: ListingSession) {
     setSessions((current) => ({ ...current, [id]: session }))
+    setPricingPlans((current) => ({ ...current, [id]: {
+      strategy: current[id]?.strategy ?? 'balanced',
+      prices: { Etsy: session.drafts.Etsy.price, eBay: session.drafts.eBay.price },
+      marketplaces: session.selected,
+    } }))
+  }
+
+  function savePricingPlan(id: string, plan: PricingPlan) {
+    setPricingPlans((current) => ({ ...current, [id]: plan }))
+    setSessions((current) => {
+      const session = current[id]
+      if (!session) return current
+      return { ...current, [id]: { ...session, selected: plan.marketplaces, drafts: {
+        Etsy: { ...session.drafts.Etsy, price: plan.prices.Etsy },
+        eBay: { ...session.drafts.eBay, price: plan.prices.eBay },
+      } } }
+    })
   }
   function prepareListing(product: Product, plan: PricingPlan) {
     setSessions((current) => {
       const previous = current[product.id]
-      const draft = (marketplace: Marketplace) => {
-        const existing = previous?.drafts[marketplace]
-        if (!existing) return createDraft(product, marketplace, plan.prices[marketplace])
-        return previous?.pricingBasis?.prices[marketplace] === plan.prices[marketplace]
-          ? existing : { ...existing, price: plan.prices[marketplace] }
-      }
+      const draft = (marketplace: Marketplace) => previous?.drafts[marketplace] ?? createDraft(product, marketplace, plan.prices[marketplace])
       return { ...current, [product.id]: {
         drafts: { Etsy: draft('Etsy'), eBay: draft('eBay') },
-        selected: previous?.pricingBasis?.marketplaces.join() === plan.marketplaces.join() ? previous.selected : plan.marketplaces,
-        saved: previous?.saved, pricingBasis: plan,
+        selected: plan.marketplaces, saved: previous?.saved,
       } }
     })
   }
@@ -113,13 +126,25 @@ function useListingStore() {
     setJobs((current) => ({ ...current, [id]: { ...job, complete: true } }))
     setSessions((current) => { const session = current[id]; return session ? { ...current, [id]: { ...session, saved: false } } : current })
   }, [])
-  function updateListing(record: Listing) {
+  function updateListing(record: Listing, edits?: Pick<ListingDraft, 'title' | 'price' | 'quantity'>) {
+    if (edits) {
+      setPricingPlans((current) => {
+        const plan = current[record.product.id] ?? initialPricingPlan(record.product)
+        return { ...current, [record.product.id]: { ...plan, prices: { ...plan.prices, [record.marketplace]: edits.price } } }
+      })
+      setSessions((current) => {
+        const session = current[record.product.id]
+        if (!session) return current
+        const draft = { ...session.drafts[record.marketplace], ...edits }
+        return { ...current, [record.product.id]: { ...session, drafts: { ...session.drafts, [record.marketplace]: draft } } }
+      })
+    }
     setRecords((current) => current.map((item) => item.id === record.id ? record : item))
   }
   function toggleConnection(marketplace: Marketplace) {
     setConnections((current) => ({ ...current, [marketplace]: !current[marketplace] }))
   }
-  return { records, sessions, jobs, settings, setSettings, connections, toggleConnection, saveSession, prepareListing, beginPublish, completePublish, updateListing }
+  return { viewMemory, pricingPlans, savePricingPlan, records, sessions, jobs, settings, setSettings, connections, toggleConnection, saveSession, prepareListing, beginPublish, completePublish, updateListing }
 }
 
 const ListingContext = createContext<ReturnType<typeof useListingStore> | null>(null)
@@ -131,6 +156,14 @@ export function useListingDemo() {
   const store = useContext(ListingContext)
   if (!store) throw new Error('ListingProvider is required')
   return store
+}
+
+// Keep unfinished work across route changes within this demo session.
+export function useSessionField<T>(key: string, initial: () => T) {
+  const { viewMemory } = useListingDemo()
+  const [value, setValue] = useState<T>(() => viewMemory.has(key) ? viewMemory.get(key) as T : initial())
+  useEffect(() => { viewMemory.set(key, value) }, [key, value, viewMemory])
+  return [value, setValue, () => viewMemory.delete(key)] as const
 }
 
 export function updateMarketSelection(selected: Marketplace[], marketplace: Marketplace) {

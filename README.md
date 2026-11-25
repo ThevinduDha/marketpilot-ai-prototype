@@ -1,52 +1,66 @@
 # MarketPilot AI
 
-MarketPilot AI is a clickable React prototype for an academic AI Economy presentation. It illustrates how a seller could turn product photos and costs into marketplace research, pricing recommendations, and seller-approved listings.
+MarketPilot AI is a clickable seller workspace for an academic AI Economy presentation. A seller can take a handmade product from photographs and production costs through marketplace comparison, pricing, listing approval, and simulated publication.
+
+## Prototype objectives
+
+- Show how sellers can inspect the evidence behind a suggested price and see the effect on estimated profit.
+- Keep seller-provided facts distinct from simulated AI suggestions, including materials that need confirmation.
+- Give the seller control over listing text, prices, and the marketplaces that receive each approved demo listing.
 
 ## Run locally
 
-Use Node.js 18 or later and npm.
+Tested with Node.js 22.18 and npm. Run these commands from the project directory in Windows PowerShell.
 
-```sh
-npm install
-npm run dev
+```powershell
+npm.cmd ci
+npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Open the local URL Vite prints. Start at the public landing page or open /dashboard for the seller workspace. /sign-in offers a demo-only entry point with read-only example fields.
+Open [MarketPilot AI locally](http://127.0.0.1:5173/). Choose **Try Demo** or **Get Started** to enter the dashboard. The optional demo sign-in uses read-only example fields. No credentials or environment variables are needed. Use Ctrl+C in the terminal to stop the server. On macOS or Linux, use `npm` in place of `npm.cmd`.
 
-```sh
-npm run build
-npm run preview
+Use these commands to type-check, build, and inspect the production version.
+
+```powershell
+npm.cmd run build
+npm.cmd run preview -- --host 127.0.0.1 --port 4173 --strictPort
 ```
 
-The production bundle is written to dist/. Configure a static host to serve index.html for client-side routes if you choose to host the prototype.
+Open the [local production preview](http://127.0.0.1:4173/). Vite writes the build to `dist/`.
 
-## Phase 1
+## Completed screens
 
-- Public landing page with a dashboard preview and demonstration entry points
-- Demo sign-in
-- Seller overview with charts, activity, recommendations, and connection status
-- Searchable and filterable product catalog with grid and table views, product details, and local draft creation
+| Area | Screens and interactions |
+| --- | --- |
+| Public entry | Landing page with dashboard preview and demo sign-in |
+| Seller workspace | Overview with revenue range selection, distribution, product links, activity, recommendations, and connection status |
+| Product catalog | Searchable grid and table, filters, product details, and a five-step wizard with local photo previews and sample data |
+| Product intelligence | Simulated analysis progress, editable suggestions, and seller material confirmation |
+| Market research | Search, marketplace filters, price sorting, side-by-side competitor comparison, and market intelligence |
+| Pricing Studio | Competitive, balanced, and premium strategies, editable marketplace prices, illustrative fees, break-even, profit, and margin |
+| Listing workflow | Etsy and eBay editors with previews, draft saving, final review, seller approval, simulated publishing, and success receipts |
+| Workspace management | My Listings with view, edit, pause, and resume, plus analytics, demo integrations, settings, and help |
 
-## Phase 2
+## Demonstration workflow
 
-- Five-step product wizard with local image previews, primary image selection, and a prefilled mahogany elephant sample
-- Product detail pages and a timed simulated analysis with editable suggestions
-- Product-specific handoff from AI analysis to marketplace research
+1. Open **Add Product** and choose **Use Sample Product**. Review the mahogany elephant's photo, dimensions, costs, stock, and marketplaces.
+2. Choose **Analyze Product**. Review the suggestions and select **Find Similar Products**. Compare up to three fictional listings with the seller's product.
+3. Open **View Market Intelligence**, then **Get Pricing Recommendations**. Choose a strategy or edit a price to see the estimated profit change.
+4. Choose **Generate Listings**. Review the Etsy and eBay drafts, edit the copy, then choose **Review Final Listings**.
+5. Select the marketplaces, choose **Confirm and Publish**, and approve the simulation. **View My Listings** shows the resulting demo records with their approved prices.
 
-## Phase 3
+**Restart Demo** in the workspace sidebar restores the initial catalog and settings after confirmation. On tablet and mobile, open the navigation menu to find it. See [the four-minute presenter guide](DEMO_GUIDE.md) for a timed walkthrough.
 
-- Searchable fictional marketplace listings with filters, sorting, and side-by-side comparison
-- Market intelligence for the wooden-elephant sample, including asking prices, feedback, demand, and quality cues
-- Editable Etsy and eBay pricing scenarios with illustrative fees and an in-memory handoff to Listings
+## Technology
 
-## Phase 4
+React 18 and TypeScript, Vite, Tailwind CSS and component styles, local Inter fonts, Lucide React icons, React Router, Recharts, and React state and context. Product and comparable photographs ship with the project.
 
-- Editable Etsy and eBay listing drafts with seller approval and a simulated publishing sequence
-- My Listings with session-only records, search, filtering, editing, and pause/resume
-- Fictional analytics, simulated connections, workspace preferences, and a guided Help page
+## Current limitations
 
-All AI output, marketplace connections, and financial figures are fictional. Drafts, local product photos, pricing selections, settings, and published demo records live in memory for the current browser session and reset on reload. The original demo catalog photography was generated for this prototype.
-
+- All AI suggestions, demand signals, feedback, sales, revenue, and marketplace operations are fictional. The research dataset contains eight wooden-elephant examples and stays the same for other products.
+- The comparison uses asking prices. Pricing uses simple per-unit arithmetic and illustrative marketplace fees. It cannot confirm completed sales, material, craftsmanship, or durability.
+- Navigation preserves work within the current tab. Reloading, closing the tab, or confirming Restart Demo clears edits, uploads, pricing plans, connection settings, and demo publications.
+- Publishing creates local demonstration IDs. There is no backend, authentication, external account connection, or live listing. Analytics trends illustrate a sample period and do not accumulate real sales.
 
 ## Product photography
 

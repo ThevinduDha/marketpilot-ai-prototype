@@ -1,5 +1,5 @@
 import { ArrowRight, ArrowUpRight, LayoutGrid, List, PackageSearch, Plus, Search, SlidersHorizontal } from 'lucide-react'
-import { useState } from 'react'
+import { useSessionField } from './listingDemo'
 import { Link } from 'react-router-dom'
 import { categories } from './demo'
 import { productMoney, productPath } from './productWorkflow'
@@ -41,10 +41,10 @@ export function ProductTable({ items, compact = false }: { items: Product[]; com
 }
 
 export function ProductsPage({ items }: { items: Product[] }) {
-  const [view, setView] = useState<'grid' | 'table'>('grid')
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('')
-  const [status, setStatus] = useState('')
+  const [view, setView] = useSessionField<'grid' | 'table'>('catalog:view', () => 'grid')
+  const [query, setQuery] = useSessionField('catalog:query', () => '')
+  const [category, setCategory] = useSessionField('catalog:category', () => '')
+  const [status, setStatus] = useSessionField('catalog:status', () => '')
   const matching = items.filter((product) =>
     (product.name + ' ' + product.category + ' ' + product.materials).toLowerCase().includes(query.trim().toLowerCase()) &&
     (!category || product.category === category) && (!status || product.status === status),

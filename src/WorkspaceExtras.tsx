@@ -111,7 +111,7 @@ export function HelpPage() {
     </section>
     <section className="card market-panel market-section"><div className="market-section-heading"><h2>Prototype limitations</h2></div>
       <ul className="help-steps"><li>Analysis, comparable listings, prices, fees, sales, and revenue are fictional.</li>
-        <li>Connections and publishing run locally. The prototype creates demo IDs only.</li><li>Uploads, settings, drafts, and published demo records reset when you reload.</li></ul>
+        <li>Connections and publishing run locally. The prototype creates demo IDs only.</li><li>Choose Restart Demo in the sidebar to restore the sample workspace. Reloading the page also clears your session.</li></ul>
     </section>
   </div>
 }

@@ -63,15 +63,15 @@ export function Dashboard({ products }: { products: Product[] }) {
   const change = periodNotes[period]
   const metrics = [
     { label: 'Total products', value: products.length, icon: Package, color: 'blue', note: 'In your demo catalog' },
-    { label: 'Active listings', value: listings, icon: Store, color: 'green', note: 'Across 2 marketplaces' },
+    { label: 'Active listings', value: listings, icon: Store, color: 'green', note: 'Published on Etsy or eBay' },
     { label: 'Pending drafts', value: drafts, icon: FileText, color: 'amber', note: 'Awaiting review' },
-    { label: 'Estimated revenue', value: money(monthlyRevenue, false), icon: CircleDollarSign, color: 'violet', note: 'Last 30 days · demo' },
+    { label: 'Estimated revenue', value: money(total, false), icon: CircleDollarSign, color: 'violet', note: 'Last ' + period + ' days · demo' },
   ]
 
   return (
     <>
       <div className="page-heading">
-        <div><h1>Overview</h1><p>Here’s what’s happening in your seller workspace.</p></div>
+        <div><h1>Overview</h1><p>Start with Add Product to take a sample item from photo to published listing.</p></div>
         <Link className="button button-primary" to="/dashboard/products?add=1"><Plus size={17} /> Add Product</Link>
       </div>
       <div className="demo-notice"><Sparkles size={17} /><p><strong>Demo workspace</strong><span>AI insights, marketplace activity, and revenue use simulated data.</span></p></div>
@@ -86,7 +86,7 @@ export function Dashboard({ products }: { products: Product[] }) {
       <div className="dashboard-grid">
         <section className="card revenue-card" aria-labelledby="revenue-title">
           <div className="card-heading">
-            <div><h2 id="revenue-title">Revenue performance</h2><p>Estimated sales across marketplaces</p></div>
+            <div><h2 id="revenue-title">Revenue performance</h2><p>Fictional revenue by interval · USD</p></div>
             <label className="period-control"><CalendarDays size={15} aria-hidden="true" /><span className="sr-only">Revenue date range</span>
               <select value={period} onChange={(event) => setPeriod(event.target.value as Period)}>
                 <option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option>
@@ -101,8 +101,8 @@ export function Dashboard({ products }: { products: Product[] }) {
           <div className="card-heading"><div><h2 id="distribution-title">Marketplace distribution</h2><p>Active demo listings by channel</p></div></div>
           <div className="donut" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart accessibilityLayer={false}><Pie data={distribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={52} outerRadius={68} startAngle={90} endAngle={-270} paddingAngle={4} stroke="none" isAnimationActive={false}>
-                {distribution.map((market) => <Cell key={market.name} fill={market.color} />)}
+              <PieChart accessibilityLayer={false}><Pie data={listings ? distribution : [{ name: 'No listings', value: 1, color: '#e2e8f0' }]} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={58} outerRadius={77} startAngle={90} endAngle={-270} paddingAngle={4} stroke="none" isAnimationActive={false}>
+                {listings ? distribution.map((market) => <Cell key={market.name} fill={market.color} />) : <Cell fill="#e2e8f0" /> }
               </Pie></PieChart>
             </ResponsiveContainer>
             <div className="donut-label"><strong>{listings}</strong><span>Active listings</span></div>

@@ -1,5 +1,6 @@
 import { ArrowRight, Columns3, LayoutGrid, List, ListFilter, Search, Star } from 'lucide-react'
 import { useState } from 'react'
+import { useSessionField } from './listingDemo'
 import { Link } from 'react-router-dom'
 import { money } from './demo'
 import type { Marketplace, Product } from './demo'
@@ -54,11 +55,12 @@ function Comparison({ product, items, onClose }: { product: Product; items: Comp
 }
 
 export function MarketplaceResearch({ product, products }: { product: Product; products: Product[] }) {
-  const [market, setMarket] = useState<Filter>('All marketplaces')
-  const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<Sort>('similarity')
-  const [view, setView] = useState<'grid' | 'table'>('grid')
-  const [selected, setSelected] = useState<string[]>([])
+  const memoryKey = 'research:' + product.id
+  const [market, setMarket] = useSessionField<Filter>(memoryKey + ':market', () => 'All marketplaces')
+  const [query, setQuery] = useSessionField(memoryKey + ':query', () => '')
+  const [sort, setSort] = useSessionField<Sort>(memoryKey + ':sort', () => 'similarity')
+  const [view, setView] = useSessionField<'grid' | 'table'>(memoryKey + ':view', () => 'grid')
+  const [selected, setSelected] = useSessionField<string[]>(memoryKey + ':selected', () => [])
   const [comparing, setComparing] = useState(false)
   const search = query.toLowerCase().trim()
   const results = closestComparables.filter((item) =>
@@ -144,8 +146,9 @@ export function MarketplaceResearch({ product, products }: { product: Product; p
         </table>
       </div>}
     </section>
-    <div className="card research-action"><div><h2>See what the sample market suggests</h2><p>Review price benchmarks, customer feedback, and demand indicators.</p></div>
-      <Link className="button button-primary" to={intelligencePath(product)}>View Market Intelligence <ArrowRight size={16} /></Link></div>
+    <nav className="market-footer-nav" aria-label="Next research step">
+      <Link className="text-link" to={intelligencePath(product)}>View Market Intelligence <ArrowRight size={16} /></Link>
+    </nav>
     {comparing && <Comparison product={product} items={selectedItems} onClose={() => setComparing(false)} />}
   </div>
 }

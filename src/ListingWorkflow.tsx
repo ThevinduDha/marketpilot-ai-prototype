@@ -6,9 +6,9 @@ import { marketplaces, priceEstimate, pricingPath, validPrice } from './marketDe
 import type { PricingPlan } from './marketDemo'
 import { MarketNotice } from './MarketUI'
 import { WorkflowPhoto } from './ProductIntelligence'
-import { addProductPath, emptyProfile, imagesFor, productMoney } from './productWorkflow'
+import { addProductPath, editProductPath, emptyProfile, imagesFor, productMoney } from './productWorkflow'
 import { Dialog, MarketLogo } from './ui'
-import { createDraft, generatedDescription, generatedTitle, listingChecklist, listingPhoto, listingRoute, updateMarketSelection, useListingDemo } from './listingDemo'
+import { createDraft, generatedDescription, generatedTitle, listingChecklist, listingPhoto, listingRoute, updateMarketSelection, useListingDemo, useSessionField } from './listingDemo'
 import type { ListingDraft, ListingSession, PublishJob } from './listingDemo'
 
 const editableFields = [
@@ -37,7 +37,7 @@ export function ListingPreview({ product, draft, marketplace }: { product: Produ
 }
 
 function ListingEditor({ product, session, onChange }: { product: Product; session: ListingSession; onChange: (session: ListingSession) => void }) {
-  const [marketplace, setMarketplace] = useState<Marketplace>(session.selected[0] ?? 'Etsy')
+  const [marketplace, setMarketplace] = useSessionField<Marketplace>('listing-tab:' + product.id + ':' + session.selected.join(','), () => session.selected[0] ?? 'Etsy')
   const [message, setMessage] = useState('')
   const [copyText, setCopyText] = useState('')
   const draft = session.drafts[marketplace]
@@ -110,6 +110,7 @@ function ListingEditor({ product, session, onChange }: { product: Product; sessi
             {photos.map((photo, index) => <option value={photo.id} key={photo.id}>Photo {index + 1} · {photo.name}</option>)}
           </select></label>
         </div>
+        {!photos.length && <Link className="text-link" to={editProductPath(product)}>Add product photographs <ArrowRight size={15} /></Link>}
         {photos.length > 0 && <div className="listing-photo-strip" aria-label="Product photos">{photos.map((photo, index) =>
           <button key={photo.id} type="button" aria-label={'Use photo ' + (index + 1)} aria-pressed={photo.id === draft.photoId}
             onClick={() => change({ photoId: photo.id })}><WorkflowPhoto photo={photo} /></button>)}</div>}
@@ -221,7 +222,7 @@ export function ListingWorkflow({ product, plan, stage, onPublished }: { product
   const { sessions, jobs, saveSession } = useListingDemo()
   const session = sessions[product.id] ?? {
     drafts: { Etsy: createDraft(product, 'Etsy', plan.prices.Etsy), eBay: createDraft(product, 'eBay', plan.prices.eBay) },
-    selected: plan.marketplaces, pricingBasis: plan,
+    selected: plan.marketplaces,
   }
   const job = jobs[product.id]
   if (stage === 'publish') return !job ? <Navigate replace to={listingRoute(product, 'review')} /> :

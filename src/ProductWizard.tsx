@@ -7,7 +7,7 @@ import type { Category, Marketplace, Product } from './demo'
 import { ProductSummary, WorkflowPhoto } from './ProductIntelligence'
 import { currencies, emptyProfile, imagesFor, makeSample, productBase, productPath, subcategories } from './productWorkflow'
 import type { ProductImage, ProductProfile } from './productWorkflow'
-import { useListingDemo } from './listingDemo'
+import { useListingDemo, useSessionField } from './listingDemo'
 import './workflow.css'
 
 const steps = [
@@ -45,8 +45,9 @@ function readPhoto(file: File): Promise<ProductImage> {
 
 export function ProductWizard({ existing, onFinish }: { existing?: Product; onFinish: (product: Product, analyze: boolean) => void }) {
   const { settings } = useListingDemo()
-  const [step, setStep] = useState(0)
-  const [draft, setDraft] = useState(() => {
+  const memoryKey = 'wizard:' + (existing?.id ?? 'new')
+  const [step, setStep, clearStep] = useSessionField(memoryKey + ':step', () => 0)
+  const [draft, setDraft, clearDraft] = useSessionField(memoryKey + ':draft', () => {
     const initial = draftFrom(existing)
     return existing ? initial : { ...initial, markets: settings.marketplaces, profile: { ...initial.profile, currency: settings.currency } }
   })
@@ -114,14 +115,20 @@ export function ProductWizard({ existing, onFinish }: { existing?: Product; onFi
     ].filter(([, value]) => value).map(([label, value]) => label + ' ' + value + ' ' + draft.profile.dimensionUnit).join(' · ') || (existing?.profile ? '' : existing?.dimensions ?? ''),
   }
 
+  function clearWizard() {
+    clearStep()
+    clearDraft()
+  }
+
   function finish(analyze: boolean) {
+    clearWizard()
     onFinish({ ...product, id: product.id || 'draft-' + crypto.getRandomValues(new Uint32Array(2)).join('-') }, analyze)
   }
 
   return (
     <div className="product-workflow">
       <Link className="text-link workflow-back" to={existing ? productPath(existing) : productBase}><ArrowLeft size={15} /> {existing ? 'Back to Product Details' : 'Back to My Products'}</Link>
-      <div className="page-heading"><div><h1>{existing ? 'Edit Product' : 'Add New Product'}</h1><p>Prepare a product for the MarketPilot AI demo workflow.</p></div></div>
+      <div className="page-heading"><div><h1>{existing ? 'Edit Product' : 'Add New Product'}</h1><p>{existing ? 'Review your saved photographs, costs, and marketplace preferences.' : 'Add your own product details or choose Use Sample Product to fill all five steps.'}</p></div></div>
       <ol className="workflow-steps card" aria-label="Product submission steps">
         {steps.map(({ name, icon: Icon }, index) => <li key={name} aria-current={step === index ? 'step' : undefined}>
           <span className="step-icon">{index < step ? <Check size={16} /> : <Icon size={16} />}</span>
@@ -201,7 +208,7 @@ export function ProductWizard({ existing, onFinish }: { existing?: Product; onFi
         {error && <p className="field-error" role="alert">{error}</p>}
         <footer className="wizard-actions">
           {step > 0 ? <button type="button" className="button button-secondary" onClick={() => goTo(step - 1)}><ArrowLeft size={16} /> Back</button> :
-            <Link className="button button-secondary" to={existing ? productPath(existing) : productBase}>Cancel</Link>}
+            <Link className="button button-secondary" to={existing ? productPath(existing) : productBase} onClick={clearWizard}>Cancel</Link>}
           <div>
             {step === 4 ? <>
               <button type="button" className="button button-secondary" onClick={() => finish(false)}>{existing?.status === 'Active' ? 'Save Changes' : 'Save Draft'}</button>

@@ -63,8 +63,8 @@ export function MyListings({ products }: { products: Product[] }) {
         <th scope="col">Stock</th><th scope="col">Status</th><th scope="col">Published</th><th scope="col">Actions</th></tr></thead>
         <tbody>{results.map((item) => <tr key={item.id}>
           <th scope="row"><div className="market-table-product"><ProductPhoto product={{ ...item.product, ...listingPhoto(item.product, item.content), name: item.content.title }} /><span><strong>{item.content.title}</strong><small>{item.id}</small></span></div></th>
-          <td><Markets marketplaces={[item.marketplace]} /></td><td>{productMoney(Number(item.content.price), item.product)}</td><td>{item.content.quantity}</td>
-          <td><span className={`status-pill ${item.status === 'Published' ? 'active' : 'draft'}`}><span />{item.status}</span></td><td>{displayDate(item.date)}</td>
+          <td data-label="Marketplace"><Markets marketplaces={[item.marketplace]} /></td><td data-label="Price">{productMoney(Number(item.content.price), item.product)}</td><td data-label="Stock">{item.content.quantity}</td>
+          <td data-label="Status"><span className={`status-pill ${item.status === 'Published' ? 'active' : 'draft'}`}><span />{item.status}</span></td><td data-label="Published">{displayDate(item.date)}</td>
           <td><div className="listing-row-actions">
             <button className="text-link" type="button" aria-label={'View ' + item.content.title} onClick={() => setPanel({ mode: 'view', item })}><Eye size={14} /> View</button>
             <button className="text-link" type="button" aria-label={'Edit ' + item.content.title} onClick={() => setPanel({ mode: 'edit', item })}><Pencil size={14} /> Edit</button>
@@ -80,7 +80,10 @@ export function MyListings({ products }: { products: Product[] }) {
       <ListingPreview product={panel.item.product} draft={panel.item.content} marketplace={panel.item.marketplace} />
     </Dialog>}
     {panel?.mode === 'edit' && <ManageEdit item={panel.item} onClose={() => setPanel(undefined)} onSave={(record) => {
-      updateListing(record); setPanel(undefined); setMessage('Demo listing updated.')
+      const { title, price, quantity } = record.content
+      updateListing(record, { title, price, quantity })
+      setPanel(undefined)
+      setMessage('Demo listing updated.')
     }} />}
   </div>
 }

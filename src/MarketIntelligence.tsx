@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ChartNoAxesCombined, CircleDollarSign, Layers3, PackageCheck, Sparkles, Store } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChartNoAxesCombined, CircleDollarSign, Layers3, PackageCheck, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { money } from './demo'
@@ -121,9 +121,9 @@ export function MarketIntelligence({ product }: { product: Product }) {
         <div><h2>AI recommendations</h2><p>Simulated suggestions for the wooden-elephant example</p></div></div></div>
       <dl className="market-insights-list">{recommendations.map(([label, text]) => <div key={label}><dt>{label}</dt><dd>{text}</dd></div>)}</dl>
     </section>
-    <div className="card research-action"><div className="market-icon-title"><span className="metric-icon icon-blue"><Store size={17} /></span>
-      <div><h2>Explore prices by marketplace</h2><p>Compare sample strategies and estimate what is left after expenses.</p></div></div>
-      <Link className="button button-primary" to={pricingPath(product)}>Get Pricing Recommendations <ArrowRight size={16} /></Link></div>
-    <Link className="text-link market-back-link" to={researchPath(product)}><ArrowLeft size={15} /> Back to Marketplace Research</Link>
+    <nav className="market-footer-nav" aria-label="Adjacent workflow steps">
+      <Link className="text-link" to={researchPath(product)}><ArrowLeft size={15} /> Back to Marketplace Research</Link>
+      <Link className="text-link" to={pricingPath(product)}>Get Pricing Recommendations <ArrowRight size={16} /></Link>
+    </nav>
   </div>
 }

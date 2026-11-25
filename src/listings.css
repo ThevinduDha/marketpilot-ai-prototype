@@ -10,8 +10,8 @@
 .listing-preview { display: grid; gap: 10px; }
 .listing-preview .market-icon-title h2 { font-size: 15px; font-weight: 735; }
 .listing-preview .market-icon-title p { font-size: 11px; color: #53637a; }
-.listing-preview .workflow-photo { max-height: 275px; aspect-ratio: 1.45; }
-.listing-preview .workflow-photo > span { max-width: 100%; }
+.listing-preview .workflow-photo { aspect-ratio: 1.6; max-height: 275px; background: #f5f2ee; }
+.listing-preview .workflow-photo > span { width: auto; height: 100%; left: 50%; transform: translate(-50%, -50%); }
 .listing-preview h3 { font-weight: 735; font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
 .listing-price-line { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
 .listing-price-line strong { font-size: 22px; font-weight: 750; }
@@ -63,6 +63,18 @@ ul.help-steps { list-style: disc; }
 @media (max-width: 720px) {
   .listing-editor-grid { grid-template-columns: 1fr; }
   .listing-preview .workflow-photo { max-height: 225px; }
+}
+@media (max-width: 650px) {
+  .listing-table, .listing-table tbody { display: block; min-width: 0; }
+  .listing-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .listing-table tbody tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; padding: 14px; border-bottom: 1px solid var(--line); }
+  .listing-table tbody tr:last-child { border-bottom: 0; }
+  .listing-table tbody :is(th, td) { min-width: 0; padding: 0; border: 0; }
+  .listing-table tbody th, .listing-table tbody td:last-child { grid-column: 1 / -1; }
+  .listing-table td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 3px; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .listing-table td[data-label="Published"] { grid-column: span 2; }
+  .listing-row-actions { gap: 14px; border-top: 1px solid var(--line); padding-top: 4px; }
+  .listing-row-actions button { min-height: 36px; }
 }
 @media (max-width: 430px) {
   .listing-toolbar .button { padding-inline: 7px; font-size: 11px; }

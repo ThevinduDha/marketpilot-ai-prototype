@@ -134,7 +134,7 @@ function AnalysisResults({ product, onSave }: { product: Product; onSave: (produ
   }
 
   return <div className="product-workflow">
-    <Link className="text-link workflow-back" to={productPath(product)}><ArrowLeft size={15} /> Product Details</Link>
+    <Link className="text-link workflow-back" to={productPath(product)} onClick={save}><ArrowLeft size={15} /> Product Details</Link>
     <div className="page-heading workflow-page-heading"><div><h1>AI Product Intelligence</h1><p>{product.name}</p></div>
       <Link className="button button-secondary" to={editProductPath(product)} onClick={save}><Pencil size={15} /> Edit Product</Link></div>
     <div className="demo-notice"><Sparkles size={17} /><p><strong>Simulated suggestions</strong><span>Photo examples cannot verify exact material, product quality, or durability.</span></p></div>

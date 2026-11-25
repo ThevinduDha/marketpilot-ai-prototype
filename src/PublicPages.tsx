@@ -2,10 +2,10 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Camera, Chec
 import { Link } from 'react-router-dom'
 import { monthlyRevenue, RevenueChart } from './Dashboard'
 import { money, sampleProducts } from './demo'
-import { Brand, DemoBadge, MarketLogo, ProductPhoto } from './ui'
+import { Brand, DemoBadge, ProductPhoto } from './ui'
 
 const featureCards = [
-  { title: 'AI product intelligence', text: 'Explore how photo and product details could turn into suggestions about materials, quality, and listing improvements.', icon: Sparkles, color: 'violet' },
+  { title: 'AI product intelligence', text: 'Review suggested product attributes, confirm the material, and identify photos that would help a buyer decide.', icon: Sparkles, color: 'violet' },
   { title: 'Marketplace research & pricing', text: 'Compare sample Etsy and eBay listings, assess demand and feedback, and explore a price range based on your costs.', icon: Tags, color: 'blue' },
   { title: 'Listing automation', text: 'See how listing titles and descriptions could be drafted for each marketplace, with a seller review before simulated publishing.', icon: ListChecks, color: 'green' },
 ]
@@ -66,7 +66,7 @@ export function Landing() {
         <section className="hero">
           <div className="public-container hero-layout">
             <div className="hero-copy">
-              <span className="hero-label"><Sparkles size={14} /> AI Economy Prototype</span>
+              <DemoBadge />
               <h1>Smarter product decisions. <span>Effortless marketplace selling.</span></h1>
               <p>MarketPilot AI brings product insights, pricing research, and marketplace listings into one workspace for independent sellers.</p>
               <div className="hero-actions"><Link className="button button-primary" to="/dashboard">Get Started <ArrowRight size={17} /></Link><Link className="button button-secondary" to="/dashboard">Try Demo <ArrowUpRight size={17} /></Link></div>
@@ -78,8 +78,8 @@ export function Landing() {
         <div className="market-strip">
           <div className="public-container market-strip-inner">
             <span>Marketplace workflows in the demo</span>
-            <div><MarketLogo name="Etsy" /><strong className="wordmark-etsy">Etsy</strong></div>
-            <div><MarketLogo name="eBay" /><strong className="wordmark-ebay">eBay</strong></div>
+            <div><strong className="wordmark-etsy">Etsy</strong></div>
+            <div><strong className="wordmark-ebay">eBay</strong></div>
           </div>
         </div>
         <section id="features" className="public-section public-container">
