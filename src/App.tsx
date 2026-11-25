@@ -5,6 +5,12 @@ import { Dashboard } from './Dashboard'
 import { ProductsPage } from './Products'
 import { AnalysisPage, ProductDetailsPage } from './ProductIntelligence'
 import { ProductWizard } from './ProductWizard'
+import { MarketplaceResearch } from './MarketplaceResearch'
+import { MarketIntelligence } from './MarketIntelligence'
+import { ListingHandoff, PricingStudio } from './PricingStudio'
+import { initialPricingPlan, researchSample } from './marketDemo'
+import type { PricingPlan } from './marketDemo'
+import './market.css'
 import { addProductPath, analysisPath, productPath, suggestionsFor } from './productWorkflow'
 import { Landing, SignIn } from './PublicPages'
 import { activities, preferenceLinks, sampleProducts, workspaceLinks } from './demo'
@@ -13,6 +19,7 @@ import { Brand, DemoBadge, Dialog, ProductPhoto } from './ui'
 
 const links = [...workspaceLinks, ...preferenceLinks]
 const addPath = addProductPath
+const implementedPaths = new Set(['/dashboard/analysis', '/dashboard/research', '/dashboard/pricing'])
 
 function ScrollToPage() {
   const { pathname } = useLocation()
@@ -22,6 +29,10 @@ function ScrollToPage() {
 
 export default function App() {
   const [products, setProducts] = useState(() => sampleProducts.map((product) => product.id === 'wooden-elephant' ? { ...product, suggestions: suggestionsFor(product) } : product))
+  const [pricingPlans, setPricingPlans] = useState<Partial<Record<string, PricingPlan>>>({})
+  const savePricingPlan = useCallback((productId: string, plan: PricingPlan) => {
+    setPricingPlans((current) => ({ ...current, [productId]: plan }))
+  }, [])
   const saveProduct = useCallback((product: Product) => {
     setProducts((current) => current.some((item) => item.id === product.id)
       ? current.map((item) => item.id === product.id ? product : item)
@@ -33,14 +44,19 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/dashboard/*" element={<Workspace products={products} onSaveProduct={saveProduct} />} />
+        <Route path="/dashboard/*" element={<Workspace products={products} onSaveProduct={saveProduct} pricingPlans={pricingPlans} onSavePricingPlan={savePricingPlan} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   )
 }
 
-function Workspace({ products, onSaveProduct }: { products: Product[]; onSaveProduct: (product: Product) => void }) {
+function Workspace({ products, onSaveProduct, pricingPlans, onSavePricingPlan }: {
+  products: Product[]
+  onSaveProduct: (product: Product) => void
+  pricingPlans: Partial<Record<string, PricingPlan>>
+  onSavePricingPlan: (productId: string, plan: PricingPlan) => void
+}) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [panel, setPanel] = useState<'search' | 'alerts' | 'account'>()
@@ -52,10 +68,13 @@ function Workspace({ products, onSaveProduct }: { products: Product[]; onSavePro
   const [params] = useSearchParams()
   const showAdd = location.pathname === '/dashboard/products' && params.has('add')
   const detailId = params.get('product')
-  const selectedProduct = products.find((product) => product.id === detailId)
+  const selectedProduct = products.find((product) => product.id === detailId) ?? (detailId === researchSample.id ? researchSample : undefined)
+  const marketProduct = selectedProduct ?? researchSample
+  const pricingPlan = pricingPlans[marketProduct.id]
   const editing = !!selectedProduct && params.has('edit')
   const currentLink = links.find((link) => link.path === location.pathname)
-  const crumb = showAdd ? 'Add Product' : location.pathname === '/dashboard/products' && detailId ? (editing ? 'Edit Product' : 'Product Details') : currentLink?.label || 'Overview'
+  const crumb = showAdd ? 'Add Product' : location.pathname === '/dashboard/products' && detailId ? (editing ? 'Edit Product' : 'Product Details')
+    : location.pathname === '/dashboard/research/intelligence' ? 'Market Intelligence' : currentLink?.label || 'Overview'
   const searchItems = products.filter((product) => product.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   useEffect(() => {
@@ -90,7 +109,7 @@ function Workspace({ products, onSaveProduct }: { products: Product[]; onSavePro
       </Link>
     ) : (
       <NavLink className={({ isActive }) => `sidebar-link${isActive && !(path === '/dashboard/products' && showAdd) ? ' sidebar-active' : ''}`}
-        to={path} end key={path} title={label} onClick={() => setMobileOpen(false)}>
+        to={path} end={path !== '/dashboard/research'} key={path} title={label} onClick={() => setMobileOpen(false)}>
         <Icon size={17} /><span>{label}</span>
       </NavLink>
     ))
@@ -140,8 +159,16 @@ function Workspace({ products, onSaveProduct }: { products: Product[]; onSavePro
               ? <ProductWizard key={editing ? detailId : 'new'} existing={editing ? selectedProduct : undefined} onFinish={finishProduct} />
               : detailId ? <ProductDetailsPage product={selectedProduct} /> : <ProductsPage items={products} />} />
             <Route path="analysis" element={<AnalysisPage product={selectedProduct} products={products} run={params.has('run')} onSave={onSaveProduct} />} />
-            {links.map((link) => 'description' in link && link.description && link.path !== '/dashboard/analysis' ?
-              <Route key={link.path} path={link.path.split('/').at(-1)} element={<PhasePreview title={link.label} description={link.description} icon={link.icon} product={link.path === '/dashboard/research' ? selectedProduct : undefined} />} /> : null)}
+            <Route path="research" element={<MarketplaceResearch key={marketProduct.id} product={marketProduct} products={products} />} />
+            <Route path="research/intelligence" element={<MarketIntelligence product={marketProduct} />} />
+            <Route path="pricing" element={<PricingStudio key={marketProduct.id} product={marketProduct} products={products}
+              plan={pricingPlan ?? initialPricingPlan(marketProduct)} onChange={(plan) => onSavePricingPlan(marketProduct.id, plan)} />} />
+            {links.map((link) => 'description' in link && link.description && !implementedPaths.has(link.path) ?
+              <Route key={link.path} path={link.path.split('/').at(-1)} element={
+                link.path === '/dashboard/listings' && selectedProduct && pricingPlan
+                  ? <ListingHandoff product={selectedProduct} plan={pricingPlan} />
+                  : <PhasePreview title={link.label} description={link.description} icon={link.icon} />
+              } /> : null)}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
@@ -180,7 +207,7 @@ function Workspace({ products, onSaveProduct }: { products: Product[]; onSavePro
   )
 }
 
-function PhasePreview({ title, description, icon: Icon, product }: { title: string; description: string; icon: typeof Search; product?: Product }) {
+function PhasePreview({ title, description, icon: Icon }: { title: string; description: string; icon: typeof Search }) {
   return (
     <>
       <div className="page-heading"><div><h1>{title}</h1><p>Planned for a later prototype phase.</p></div></div>
@@ -188,8 +215,7 @@ function PhasePreview({ title, description, icon: Icon, product }: { title: stri
         <span className="feature-icon icon-violet"><Icon size={25} /></span>
         <h2>{title} preview</h2><p>{description}</p>
         <span className="phase-label"><FlaskConical size={14} /> Later-phase preview</span>
-        {product && <p>Selected product: <strong>{product.name}</strong></p>}
-        <Link to={product ? analysisPath(product) : "/dashboard"} className="button button-primary"><ArrowLeft size={16} /> {product ? "Back to Analysis" : "Back to Overview"}</Link>
+        <Link to="/dashboard" className="button button-primary"><ArrowLeft size={16} /> Back to Overview</Link>
       </section>
     </>
   )

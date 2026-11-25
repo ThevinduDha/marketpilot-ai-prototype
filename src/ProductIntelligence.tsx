@@ -181,7 +181,7 @@ function AnalysisResults({ product, onSave }: { product: Product; onSave: (produ
         ]} />
       </section>
     </div>
-    <section className="card research-action"><div><h2>Compare similar products</h2><p>Continue to the marketplace research preview with this product selected.</p></div>
+    <section className="card research-action"><div><h2>Compare similar products</h2><p>Open Marketplace Research with this product selected.</p></div>
       <Link className="button button-primary" to={researchPath(product)} onClick={save}><Search size={16} /> Find Similar Products <ChevronRight size={15} /></Link></section>
   </div>
 }
